@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${appName} + ' - Home'">EcoRecycle - Home</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <h2>♻️ EcoRecycle</h2>
+            </div>
+            <ul class="nav-links">
+                <li><a th:href="@{/}" class="active">Home</a></li>
+                <li><a th:href="@{/about}">About</a></li>
+                <li><a th:href="@{/users/login}">User Login</a></li>
+                <li><a th:href="@{/recyclers/login}">Recycler Login</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 th:text="${message}">Welcome to EcoRecycle Platform</h1>
+                <p>Join us in making the world cleaner by recycling plastic waste efficiently</p>
+                <div class="hero-buttons">
+                    <a th:href="@{/users/register}" class="btn btn-primary">Register as User</a>
+                    <a th:href="@{/recyclers/register}" class="btn btn-secondary">Register as Recycler</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2>How It Works</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>1. Request Pickup</h3>
+                    <p>Schedule a pickup for your plastic waste at your convenience</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚚</div>
+                    <h3>2. Recycler Collects</h3>
+                    <p>Verified recyclers accept and collect your waste</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⭐</div>
+                    <h3>3. Earn Eco Points</h3>
+                    <p>Get rewarded with eco points for every successful recycling</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌍</div>
+                    <h3>4. Save the Planet</h3>
+                    <p>Contribute to a cleaner and greener environment</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section class="stats">
+        <div class="container">
+            <h2>Our Impact</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>1000+</h3>
+                    <p>Active Users</p>
+                </div>
+                <div class="stat-card">
+                    <h3>50+</h3>
+                    <p>Recycling Centers</p>
+                </div>
+                <div class="stat-card">
+                    <h3>5000 kg</h3>
+                    <p>Plastic Recycled</p>
+                </div>
+                <div class="stat-card">
+                    <h3>10000+</h3>
+                    <p>Eco Points Earned</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 EcoRecycle. All rights reserved.</p>
+            <p>Making the world cleaner, one pickup at a time ♻️</p>
+        </div>
+    </footer>
+</body>
+</html>
+

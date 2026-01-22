@@ -15,20 +15,13 @@ import java.util.List;
  * and recycling history management.
  */
 @Entity
-@Table(
-    name = "users",
-    indexes = {
-        @Index(name = "idx_email", columnList = "email", unique = true),
-        @Index(name = "idx_user_type", columnList = "user_type")
-    }
-)
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = "recyclingHistory")
-@EqualsAndHashCode(exclude = "recyclingHistory")
+@ToString(exclude = {"recyclingHistory", "pickupRequests"})
 public class User {
 
     @Id
@@ -41,6 +34,14 @@ public class User {
 
     @Column(name = "email", nullable = false, unique = true)
     private String email;
+
+    @Column(name = "username", nullable = false, unique = true)
+    private String username;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false, length = 30)
+    @Builder.Default
+    private Role role = Role.USER;
 
     @Column(name = "phone")
     private String phone;
@@ -67,6 +68,15 @@ public class User {
     )
     @Builder.Default
     private List<RecyclingHistory> recyclingHistory = new ArrayList<>();
+
+    @OneToMany(
+        mappedBy = "user",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true,
+        fetch = FetchType.LAZY
+    )
+    @Builder.Default
+    private List<PickupRequest> pickupRequests = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "date_joined", nullable = false, updatable = false)
@@ -122,5 +132,25 @@ public class User {
             this.ecoPoints -= points;
         }
     }
-}
 
+    /**
+     * Add pickup request to user's requests
+     */
+    public void addPickupRequest(PickupRequest request) {
+        if (this.pickupRequests == null) {
+            this.pickupRequests = new ArrayList<>();
+        }
+        request.setUser(this);
+        this.pickupRequests.add(request);
+    }
+
+    /**
+     * Remove pickup request from user's requests
+     */
+    public void removePickupRequest(PickupRequest request) {
+        if (this.pickupRequests != null) {
+            this.pickupRequests.remove(request);
+            request.setUser(null);
+        }
+    }
+}

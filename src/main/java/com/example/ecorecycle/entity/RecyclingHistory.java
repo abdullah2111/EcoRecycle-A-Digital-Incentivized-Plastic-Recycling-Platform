@@ -26,7 +26,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @ToString(exclude = {"user", "recycler"})
-@EqualsAndHashCode(exclude = {"user", "recycler"})
 public class RecyclingHistory {
 
     @Id

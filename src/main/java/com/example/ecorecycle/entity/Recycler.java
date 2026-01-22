@@ -26,8 +26,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = "recyclingHistories")
-@EqualsAndHashCode(exclude = "recyclingHistories")
+@ToString(exclude = {"recyclingHistories", "pickupRequests"})
 public class Recycler {
 
     @Id
@@ -44,14 +43,19 @@ public class Recycler {
     @Column(name = "phone")
     private String phone;
 
+    @Column(name = "password", nullable = false)
+    private String password;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false, length = 30)
+    @Builder.Default
+    private Role role = Role.RECYCLER;
+
     @Column(name = "service_area", nullable = false, length = 500)
     private String serviceArea;
 
     @Column(name = "pickup_schedule", length = 1000)
     private String pickupSchedule;
-
-    @Column(name = "recycling_capacity", nullable = false)
-    private Double recyclingCapacity;
 
     @Column(name = "ratings")
     @Builder.Default
@@ -71,17 +75,23 @@ public class Recycler {
     @Column(name = "operating_hours")
     private String operatingHours;
 
-    @Column(name = "accepted_plastic_types", length = 1000)
-    private String acceptedPlasticTypes;
 
     @OneToMany(
-        mappedBy = "recycler",
-        cascade = CascadeType.ALL,
-        orphanRemoval = true,
-        fetch = FetchType.LAZY
+            mappedBy = "recycler",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
     )
     @Builder.Default
     private List<RecyclingHistory> recyclingHistories = new ArrayList<>();
+
+    @OneToMany(
+            mappedBy = "recycler",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE},
+            fetch = FetchType.LAZY
+    )
+    @Builder.Default
+    private List<PickupRequest> pickupRequests = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -129,10 +139,23 @@ public class Recycler {
     }
 
     /**
-     * Check if recycler can handle additional capacity
+     * Add pickup request to recycler's requests
      */
-    public boolean canHandleWeight(Double weight) {
-        return weight != null && weight <= this.recyclingCapacity;
+    public void addPickupRequest(PickupRequest request) {
+        if (this.pickupRequests == null) {
+            this.pickupRequests = new ArrayList<>();
+        }
+        request.setRecycler(this);
+        this.pickupRequests.add(request);
+    }
+
+    /**
+     * Remove pickup request from recycler's requests
+     */
+    public void removePickupRequest(PickupRequest request) {
+        if (this.pickupRequests != null) {
+            this.pickupRequests.remove(request);
+            request.setRecycler(null);
+        }
     }
 }
-

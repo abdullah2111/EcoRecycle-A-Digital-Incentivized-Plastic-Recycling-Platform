@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register User - EcoRecycle</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<nav class="navbar">
+    <div class="container">
+        <div class="logo"><h2>♻️ EcoRecycle</h2></div>
+        <ul class="nav-links">
+            <li><a th:href="@{/}">Home</a></li>
+            <li><a th:href="@{/about}">About</a></li>
+            <li><a th:href="@{/login}">Login</a></li>
+        </ul>
+    </div>
+</nav>
+
+<section class="about-section">
+    <div class="container">
+        <h1>Register as User</h1>
+        <form th:action="@{/users/register}" th:object="${user}" method="post">
+            <div>
+                <label>Name</label>
+                <input type="text" th:field="*{name}" required>
+                <div th:if="${#fields.hasErrors('name')}" th:errors="*{name}" class="alert error"></div>
+            </div>
+            <div>
+                <label>Email</label>
+                <input type="email" th:field="*{email}" required>
+                <div th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="alert error"></div>
+            </div>
+            <div>
+                <label>Username</label>
+                <input type="text" th:field="*{username}" required>
+                <div th:if="${#fields.hasErrors('username')}" th:errors="*{username}" class="alert error"></div>
+            </div>
+            <div>
+                <label>Password</label>
+                <input type="password" th:field="*{password}" required>
+                <div th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="alert error"></div>
+            </div>
+            <div>
+                <label>User Type</label>
+                <select th:field="*{userType}" required>
+                    <option th:each="type : ${userTypes}" th:value="${type}" th:text="${type}"></option>
+                </select>
+                <div th:if="${#fields.hasErrors('userType')}" th:errors="*{userType}" class="alert error"></div>
+            </div>
+            <button type="submit">Register</button>
+        </form>
+    </div>
+</section>
+</body>
+</html>
+

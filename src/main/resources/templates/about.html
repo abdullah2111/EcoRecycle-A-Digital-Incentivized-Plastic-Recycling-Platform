@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${appName} + ' - About'">EcoRecycle - About</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <h2>♻️ EcoRecycle</h2>
+            </div>
+            <ul class="nav-links">
+                <li><a th:href="@{/}">Home</a></li>
+                <li><a th:href="@{/about}" class="active">About</a></li>
+                <li><a th:href="@{/users/login}">User Login</a></li>
+                <li><a th:href="@{/recyclers/login}">Recycler Login</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- About Content -->
+    <section class="about-section">
+        <div class="container">
+            <h1>About EcoRecycle</h1>
+            <p class="lead">We are dedicated to making plastic recycling easy, efficient, and rewarding.</p>
+
+            <div class="about-content">
+                <h2>Our Mission</h2>
+                <p>
+                    EcoRecycle connects households and businesses with certified recycling centers,
+                    making it easier than ever to dispose of plastic waste responsibly. Our platform
+                    rewards users for their eco-friendly actions while ensuring proper waste management.
+                </p>
+
+                <h2>What We Do</h2>
+                <ul>
+                    <li>🏠 Connect users with local recycling centers</li>
+                    <li>📅 Schedule convenient pickup times</li>
+                    <li>⭐ Reward eco-friendly behavior with points</li>
+                    <li>📊 Track your environmental impact</li>
+                    <li>🌱 Promote sustainable waste management</li>
+                </ul>
+
+                <h2>Why Choose Us?</h2>
+                <p>
+                    Traditional recycling can be complicated and time-consuming. EcoRecycle simplifies
+                    the process by bringing recycling services directly to you. Whether you're a household
+                    or a business, we make it easy to do your part for the environment.
+                </p>
+
+                <div class="cta-section">
+                    <h3>Ready to Make a Difference?</h3>
+                    <a th:href="@{/users/register}" class="btn btn-primary">Get Started Today</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 EcoRecycle. All rights reserved.</p>
+            <p>Making the world cleaner, one pickup at a time ♻️</p>
+        </div>
+    </footer>
+</body>
+</html>
+
