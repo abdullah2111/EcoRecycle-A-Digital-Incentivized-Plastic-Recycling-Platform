@@ -1,8 +1,11 @@
 package com.example.ecorecycle.entity;
 
+/**
+ * Role enum for Spring Security and access control
+ */
 public enum Role {
-    USER,
-    RECYCLER,
-    ADMIN
+    ROLE_HOUSEHOLD,
+    ROLE_BUSINESS,
+    ROLE_RECYCLER,
+    ROLE_ADMIN
 }
-

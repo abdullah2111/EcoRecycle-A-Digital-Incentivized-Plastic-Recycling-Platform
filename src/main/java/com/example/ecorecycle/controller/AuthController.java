@@ -1,14 +1,14 @@
 package com.example.ecorecycle.controller;
 
-import com.example.ecorecycle.dto.RegisterRecyclerDto;
-import com.example.ecorecycle.dto.RegisterUserDto;
-import com.example.ecorecycle.entity.UserType;
+import com.example.ecorecycle.dto.RecyclerRegistrationDto;
+import com.example.ecorecycle.dto.UserRegistrationDto;
+import com.example.ecorecycle.entity.Role;
 import com.example.ecorecycle.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,43 +25,56 @@ public class AuthController {
         return "auth/login";
     }
 
-    @GetMapping("/users/register")
+    @GetMapping("/register")
     public String userRegisterPage(Model model) {
-        model.addAttribute("user", new RegisterUserDto());
-        model.addAttribute("userTypes", UserType.values());
+        model.addAttribute("user", new UserRegistrationDto());
+        model.addAttribute("userRoles", new Role[]{Role.ROLE_HOUSEHOLD, Role.ROLE_BUSINESS});
         return "auth/register-user";
     }
 
-    @PostMapping("/users/register")
-    public String registerUser(@Validated @ModelAttribute("user") RegisterUserDto dto,
+    @PostMapping("/register")
+    public String registerUser(@Valid @ModelAttribute("user") UserRegistrationDto dto,
                                BindingResult bindingResult,
                                RedirectAttributes redirectAttributes,
                                Model model) {
         if (bindingResult.hasErrors()) {
-            model.addAttribute("userTypes", UserType.values());
+            model.addAttribute("userRoles", new Role[]{Role.ROLE_HOUSEHOLD, Role.ROLE_BUSINESS});
             return "auth/register-user";
         }
-        authService.registerUser(dto.getName(), dto.getEmail(), dto.getUsername(), dto.getPassword(), dto.getUserType());
-        redirectAttributes.addFlashAttribute("success", "User registered. Please login.");
-        return "redirect:/login";
+
+        try {
+            authService.registerUser(dto);
+            redirectAttributes.addFlashAttribute("success", "Registration successful! Please login.");
+            return "redirect:/login";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            model.addAttribute("userRoles", new Role[]{Role.ROLE_HOUSEHOLD, Role.ROLE_BUSINESS});
+            return "auth/register-user";
+        }
     }
 
-    @GetMapping("/recyclers/register")
+    @GetMapping("/register/recycler")
     public String recyclerRegisterPage(Model model) {
-        model.addAttribute("recycler", new RegisterRecyclerDto());
+        model.addAttribute("recycler", new RecyclerRegistrationDto());
         return "auth/register-recycler";
     }
 
-    @PostMapping("/recyclers/register")
-    public String registerRecycler(@Validated @ModelAttribute("recycler") RegisterRecyclerDto dto,
+    @PostMapping("/register/recycler")
+    public String registerRecycler(@Valid @ModelAttribute("recycler") RecyclerRegistrationDto dto,
                                    BindingResult bindingResult,
-                                   RedirectAttributes redirectAttributes) {
+                                   RedirectAttributes redirectAttributes,
+                                   Model model) {
         if (bindingResult.hasErrors()) {
             return "auth/register-recycler";
         }
-        authService.registerRecycler(dto.getName(), dto.getEmail(), dto.getPassword(), dto.getServiceArea());
-        redirectAttributes.addFlashAttribute("success", "Recycler registered. Please login.");
-        return "redirect:/login";
+
+        try {
+            authService.registerRecycler(dto);
+            redirectAttributes.addFlashAttribute("success", "Recycler registered successfully! Please login.");
+            return "redirect:/login";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "auth/register-recycler";
+        }
     }
 }
-

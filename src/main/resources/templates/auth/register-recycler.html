@@ -2,8 +2,101 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Register Recycler - EcoRecycle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recycler Registration - EcoRecycle</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .registration-container {
+            max-width: 700px;
+            margin: 2rem auto;
+            background: white;
+            padding: 2.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        }
+        .form-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .form-header h1 {
+            color: #2c5f2d;
+            margin-bottom: 0.5rem;
+        }
+        .info-box {
+            background: #f0f8f0;
+            border-left: 4px solid #2c5f2d;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group label .required {
+            color: #e74c3c;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #2c5f2d;
+            box-shadow: 0 0 0 3px rgba(44, 95, 45, 0.1);
+        }
+        .section-divider {
+            height: 1px;
+            background: #eee;
+            margin: 2rem 0;
+        }
+        .section-title {
+            color: #2c5f2d;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #2c5f2d;
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 1rem;
+            background-color: #2c5f2d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-submit:hover {
+            background-color: #1a3a1a;
+        }
+        .login-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #666;
+        }
+        .login-link a {
+            color: #2c5f2d;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+        }
+    </style>
 </head>
 <body>
 <nav class="navbar">
@@ -18,31 +111,143 @@
 </nav>
 
 <section class="about-section">
-    <div class="container">
-        <h1>Register as Recycler</h1>
-        <form th:action="@{/recyclers/register}" th:object="${recycler}" method="post">
-            <div>
-                <label>Name</label>
-                <input type="text" th:field="*{name}" required>
-                <div th:if="${#fields.hasErrors('name')}" th:errors="*{name}" class="alert error"></div>
+    <div class="registration-container">
+        <div class="form-header">
+            <h1>♻️ Register as Recycler</h1>
+            <p>Join us and start collecting plastic waste</p>
+        </div>
+
+        <div class="info-box">
+            ℹ️ Register your recycling center and connect with users in your service area
+        </div>
+
+        <div th:if="${error}" class="alert error" th:text="${error}"></div>
+
+        <form th:action="@{/register/recycler}" th:object="${recycler}" method="post">
+
+            <!-- Section 1: Account Credentials -->
+            <div class="step-indicator">
+                <div class="step-title">🔐 Account Credentials</div>
+                <div class="step-description">Create your login credentials</div>
             </div>
-            <div>
-                <label>Email</label>
-                <input type="email" th:field="*{email}" required>
-                <div th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="alert error"></div>
+
+            <div class="form-group">
+                <label>Center Name <span class="required">*</span></label>
+                <input type="text" th:field="*{name}" required placeholder="e.g., Green Recycling Center">
+                <div th:if="${#fields.hasErrors('name')}" th:errors="*{name}" class="error-message"></div>
             </div>
-            <div>
-                <label>Password</label>
+
+            <div class="form-group">
+                <label>Username <span class="required">*</span></label>
+                <input type="text" th:field="*{username}" required>
+                <div th:if="${#fields.hasErrors('username')}" th:errors="*{username}" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Email <span class="required">*</span></label>
+                <input type="email" th:field="*{email}" required placeholder="contact@recycler.com">
+                <div th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Password <span class="required">*</span></label>
                 <input type="password" th:field="*{password}" required>
-                <div th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="alert error"></div>
+                <div th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="error-message"></div>
             </div>
-            <div>
-                <label>Service Area</label>
-                <input type="text" th:field="*{serviceArea}" required>
-                <div th:if="${#fields.hasErrors('serviceArea')}" th:errors="*{serviceArea}" class="alert error"></div>
+
+            <div class="form-group">
+                <label>Confirm Password <span class="required">*</span></label>
+                <input type="password" th:field="*{confirmPassword}" required>
+                <div th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}" class="error-message"></div>
             </div>
-            <button type="submit">Register</button>
+
+            <div class="section-divider"></div>
+
+            <!-- Section 2: Contact & Location -->
+            <div class="section-title">📞 Contact Information</div>
+
+            <div class="form-group">
+                <label>Phone Number <span class="required">*</span></label>
+                <input type="tel" th:field="*{phone}" required>
+                <div th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}" class="error-message"></div>
+            </div>
+
+            <div class="section-divider"></div>
+            <div class="section-title">📍 Center Address</div>
+
+            <div class="form-group">
+                <label>District <span class="required">*</span></label>
+                <input type="text" th:field="*{district}" required placeholder="e.g., Dhaka, Chittagong">
+                <div th:if="${#fields.hasErrors('district')}" th:errors="*{district}" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Thana/Upazilla <span class="required">*</span></label>
+                <input type="text" th:field="*{thana}" required placeholder="e.g., Dhanmondi, Mirpur">
+                <div th:if="${#fields.hasErrors('thana')}" th:errors="*{thana}" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Area <span class="required">*</span></label>
+                <input type="text" th:field="*{area}" required placeholder="e.g., Residential Area, Block, Zone">
+                <div th:if="${#fields.hasErrors('area')}" th:errors="*{area}" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Road, House/Flat Number <span class="required">*</span></label>
+                <input type="text" th:field="*{addressLine}" required placeholder="e.g., Road 5, Building 123 or Complex A">
+                <div th:if="${#fields.hasErrors('addressLine')}" th:errors="*{addressLine}" class="error-message"></div>
+            </div>
+
+            <div class="section-divider"></div>
+            <div class="section-title">🗺️ Service Area</div>
+
+            <div class="form-group">
+                <label>Service Area <span class="required">*</span></label>
+                <input type="text" th:field="*{serviceArea}" required placeholder="e.g., Downtown, North Zone, Entire District">
+                <div th:if="${#fields.hasErrors('serviceArea')}" th:errors="*{serviceArea}" class="error-message"></div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Section 3: Operations -->
+            <div class="section-title">⏰ Operations</div>
+
+            <div class="form-group">
+                <label>Operating Hours <span class="required">*</span></label>
+                <input type="text" th:field="*{operatingHours}" required placeholder="e.g., Mon-Fri: 9AM-6PM">
+                <div th:if="${#fields.hasErrors('operatingHours')}" th:errors="*{operatingHours}" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Pickup Schedule <span class="required">*</span></label>
+                <input type="text" th:field="*{pickupSchedule}" required placeholder="e.g., Monday, Wednesday, Friday">
+                <div th:if="${#fields.hasErrors('pickupSchedule')}" th:errors="*{pickupSchedule}" class="error-message"></div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Section 4: Capacity & Services -->
+            <div class="section-title">📦 Capacity & Services</div>
+
+            <div class="form-group">
+                <label>Daily Recycling Capacity (kg) <span class="required">*</span></label>
+                <input type="number" th:field="*{recyclingCapacity}" required min="1" step="0.1" placeholder="e.g., 500">
+                <div th:if="${#fields.hasErrors('recyclingCapacity')}" th:errors="*{recyclingCapacity}" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Types of Plastic Accepted <span class="required">*</span></label>
+                <input type="text" th:field="*{acceptedPlasticTypes}" required placeholder="e.g., PET, HDPE, PVC, LDPE">
+                <div th:if="${#fields.hasErrors('acceptedPlasticTypes')}" th:errors="*{acceptedPlasticTypes}" class="error-message"></div>
+            </div>
+
+            <button type="submit" class="btn-submit">Register Recycling Center</button>
         </form>
+
+        <div class="login-link">
+            <p>Already registered? <a th:href="@{/login}">Login here</a></p>
+        </div>
     </div>
 </section>
 </body>

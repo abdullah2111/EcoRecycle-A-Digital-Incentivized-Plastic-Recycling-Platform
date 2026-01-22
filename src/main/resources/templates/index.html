@@ -16,8 +16,7 @@
             <ul class="nav-links">
                 <li><a th:href="@{/}" class="active">Home</a></li>
                 <li><a th:href="@{/about}">About</a></li>
-                <li><a th:href="@{/users/login}">User Login</a></li>
-                <li><a th:href="@{/recyclers/login}">Recycler Login</a></li>
+                <li><a th:href="@{/login}">Login</a></li>
             </ul>
         </div>
     </nav>
@@ -29,8 +28,8 @@
                 <h1 th:text="${message}">Welcome to EcoRecycle Platform</h1>
                 <p>Join us in making the world cleaner by recycling plastic waste efficiently</p>
                 <div class="hero-buttons">
-                    <a th:href="@{/users/register}" class="btn btn-primary">Register as User</a>
-                    <a th:href="@{/recyclers/register}" class="btn btn-secondary">Register as Recycler</a>
+                    <a th:href="@{/register}" class="btn btn-primary">Register as User</a>
+                    <a th:href="@{/register/recycler}" class="btn btn-secondary">Register as Recycler</a>
                 </div>
             </div>
         </div>

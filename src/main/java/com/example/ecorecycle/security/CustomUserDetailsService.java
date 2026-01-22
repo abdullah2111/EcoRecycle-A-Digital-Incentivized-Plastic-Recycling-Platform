@@ -1,10 +1,8 @@
 package com.example.ecorecycle.security;
 
-import com.example.ecorecycle.entity.Recycler;
+import com.example.ecorecycle.entity.BaseUser;
 import com.example.ecorecycle.entity.Role;
-import com.example.ecorecycle.entity.User;
-import com.example.ecorecycle.repository.RecyclerRepository;
-import com.example.ecorecycle.repository.UserRepository;
+import com.example.ecorecycle.repository.BaseUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -20,35 +18,23 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UserRepository userRepository;
-    private final RecyclerRepository recyclerRepository;
+    private final BaseUserRepository baseUserRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username).orElse(null);
-        if (user != null) {
-            return org.springframework.security.core.userdetails.User
-                    .withUsername(user.getUsername())
-                    .password(user.getPassword())
-                    .authorities(mapRole(user.getRole()))
-                    .accountLocked(!user.getIsActive())
-                    .build();
-        }
+        BaseUser user = baseUserRepository.findByUsername(username)
+                .or(() -> baseUserRepository.findByEmail(username))
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        Recycler recycler = recyclerRepository.findByEmail(username).orElse(null);
-        if (recycler != null) {
-            return org.springframework.security.core.userdetails.User
-                    .withUsername(recycler.getEmail())
-                    .password(recycler.getPassword())
-                    .authorities(mapRole(recycler.getRole()))
-                    .accountLocked(!recycler.getIsActive())
-                    .build();
-        }
-        throw new UsernameNotFoundException("User not found: " + username);
+        return org.springframework.security.core.userdetails.User
+                .withUsername(user.getUsername())
+                .password(user.getPassword())
+                .authorities(mapRole(user.getRole()))
+                .accountLocked(!user.getIsActive())
+                .build();
     }
 
     private Collection<? extends GrantedAuthority> mapRole(Role role) {
         return List.of(new SimpleGrantedAuthority(role.name()));
     }
 }
-
