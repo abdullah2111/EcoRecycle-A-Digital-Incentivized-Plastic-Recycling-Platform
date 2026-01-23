@@ -6,6 +6,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Base User entity for authentication only.
@@ -66,6 +68,16 @@ public class BaseUser {
     @OneToOne(mappedBy = "baseUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private RecyclerProfile recyclerProfile;
 
+    // One-to-Many relationship with PickupRequest
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<PickupRequest> pickupRequests = new ArrayList<>();
+
+    // One-to-Many relationship for recycler's assigned pickups
+    @OneToMany(mappedBy = "recycler", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<PickupRequest> assignedPickups = new ArrayList<>();
+
     // Helper methods to get profile-specific data
     public String getName() {
         if (role == Role.ROLE_HOUSEHOLD && householdProfile != null) {
@@ -78,3 +90,5 @@ public class BaseUser {
         return username;
     }
 }
+
+
