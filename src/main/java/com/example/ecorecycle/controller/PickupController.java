@@ -193,5 +193,84 @@ public class PickupController {
             }
         }
     }
+
+    /**
+     * Recycler - View all pending pickup requests in their service area
+     */
+    @GetMapping("/requests")
+    public String viewPickupRequests(@PathVariable String username,
+                                     Authentication auth,
+                                     Model model) {
+        // Security check
+        if (auth == null || !auth.getName().equals(username)) {
+            return "redirect:/login";
+        }
+
+        try {
+            List<PickupRequest> pickupRequests = pickupService.getPendingPickupsForRecycler(username);
+            model.addAttribute("pickupRequests", pickupRequests);
+            model.addAttribute("username", username);
+            return "user/recycler/pickup-requests";
+        } catch (Exception e) {
+            try {
+                return "redirect:/" + username + "/dashboard?error=" +
+                       URLEncoder.encode("Error loading pickup requests", "UTF-8");
+            } catch (UnsupportedEncodingException ex) {
+                return "redirect:/" + username + "/dashboard";
+            }
+        }
+    }
+
+    /**
+     * Recycler - Accept a pickup request
+     */
+    @PostMapping("/accept/{pickupId}")
+    public String acceptPickupRequest(@PathVariable String username,
+                                      @PathVariable Long pickupId,
+                                      Authentication auth) {
+        // Security check
+        if (auth == null || !auth.getName().equals(username)) {
+            return "redirect:/login";
+        }
+
+        try {
+            pickupService.acceptPickupRequest(pickupId, username);
+            return "redirect:/" + username + "/pickup/requests?success=" +
+                   URLEncoder.encode("Pickup request accepted successfully!", "UTF-8");
+        } catch (Exception e) {
+            try {
+                return "redirect:/" + username + "/pickup/requests?error=" +
+                       URLEncoder.encode("Error accepting pickup request", "UTF-8");
+            } catch (UnsupportedEncodingException ex) {
+                return "redirect:/" + username + "/pickup/requests";
+            }
+        }
+    }
+
+    /**
+     * Recycler - Reject a pickup request
+     */
+    @PostMapping("/reject/{pickupId}")
+    public String rejectPickupRequest(@PathVariable String username,
+                                      @PathVariable Long pickupId,
+                                      Authentication auth) {
+        // Security check
+        if (auth == null || !auth.getName().equals(username)) {
+            return "redirect:/login";
+        }
+
+        try {
+            pickupService.rejectPickupRequest(pickupId);
+            return "redirect:/" + username + "/pickup/requests?success=" +
+                   URLEncoder.encode("Pickup request rejected", "UTF-8");
+        } catch (Exception e) {
+            try {
+                return "redirect:/" + username + "/pickup/requests?error=" +
+                       URLEncoder.encode("Error rejecting pickup request", "UTF-8");
+            } catch (UnsupportedEncodingException ex) {
+                return "redirect:/" + username + "/pickup/requests";
+            }
+        }
+    }
 }
 

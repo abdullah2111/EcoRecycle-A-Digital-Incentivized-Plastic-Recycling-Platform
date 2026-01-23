@@ -362,6 +362,14 @@
                 </div>
                 <div class="info-value" th:text="${user.email}">email@example.com</div>
             </div>
+            <div class="info-row">
+                <div class="info-label">
+                    <i class="bi bi-star-fill"></i> Center Rating
+                </div>
+                <div class="info-value">
+                    <span class="badge bg-warning" th:text="${profile.ratings} + '/5 (' + ${profile.totalReviews} + ' reviews)'">Rating</span>
+                </div>
+            </div>
         </div>
 
         <!-- Center Information -->
@@ -452,14 +460,7 @@
                 </div>
                 <div class="info-value" th:text="${profile.acceptedPlasticTypes}">Types</div>
             </div>
-            <div class="info-row">
-                <div class="info-label">
-                    <i class="bi bi-star-fill"></i> Center Rating
-                </div>
-                <div class="info-value">
-                    <span class="badge bg-warning" th:text="${profile.ratings} + '/5 (' + ${profile.totalReviews} + ' reviews)'">Rating</span>
-                </div>
-            </div>
+
         </div>
     </main>
 </div>

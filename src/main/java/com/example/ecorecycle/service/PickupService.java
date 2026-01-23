@@ -135,5 +135,58 @@ public class PickupService {
         return pickupRequestRepository.findByStatusAndAreaOrderByCreatedAtDesc(
                 PickupRequest.PickupStatus.PENDING, area);
     }
+
+    /**
+     * Get pending pickup requests for recycler based on their service area (thana)
+     */
+    public List<PickupRequest> getPendingPickupsForRecycler(String username) {
+        BaseUser recycler = baseUserRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Recycler not found"));
+
+        if (recycler.getRole() != Role.ROLE_RECYCLER || recycler.getRecyclerProfile() == null) {
+            throw new RuntimeException("User is not a recycler");
+        }
+
+        String thana = recycler.getRecyclerProfile().getThana();
+        return pickupRequestRepository.findByStatusAndThanaOrderByCreatedAtDesc(
+                PickupRequest.PickupStatus.PENDING, thana);
+    }
+
+    /**
+     * Accept pickup request (recycler accepts the request)
+     */
+    @Transactional
+    public PickupRequest acceptPickupRequest(Long pickupId, String recyclerUsername) {
+        PickupRequest pickupRequest = getPickupRequestById(pickupId);
+        BaseUser recycler = baseUserRepository.findByUsername(recyclerUsername)
+                .orElseThrow(() -> new RuntimeException("Recycler not found"));
+
+        // Check if already accepted or completed
+        if (pickupRequest.getStatus() != PickupRequest.PickupStatus.PENDING) {
+            throw new RuntimeException("This pickup request is no longer available");
+        }
+
+        pickupRequest.setStatus(PickupRequest.PickupStatus.ACCEPTED);
+        pickupRequest.setRecycler(recycler);
+        pickupRequest.setScheduledDate(pickupRequest.getPreferredDate());
+
+        return pickupRequestRepository.save(pickupRequest);
+    }
+
+    /**
+     * Reject pickup request
+     */
+    @Transactional
+    public PickupRequest rejectPickupRequest(Long pickupId) {
+        PickupRequest pickupRequest = getPickupRequestById(pickupId);
+
+        // Check if can be rejected
+        if (pickupRequest.getStatus() != PickupRequest.PickupStatus.PENDING) {
+            throw new RuntimeException("This pickup request cannot be rejected");
+        }
+
+        pickupRequest.setStatus(PickupRequest.PickupStatus.REJECTED);
+        return pickupRequestRepository.save(pickupRequest);
+    }
 }
 

@@ -34,5 +34,8 @@ public interface PickupRequestRepository extends JpaRepository<PickupRequest, Lo
 
     // Find pending requests in a specific area (for recyclers to see available requests)
     List<PickupRequest> findByStatusAndAreaOrderByCreatedAtDesc(PickupRequest.PickupStatus status, String area);
+
+    // Find pending requests in a specific thana (for recyclers to see available requests)
+    List<PickupRequest> findByStatusAndThanaOrderByCreatedAtDesc(PickupRequest.PickupStatus status, String thana);
 }
 
