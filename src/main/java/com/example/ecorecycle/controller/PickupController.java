@@ -272,5 +272,112 @@ public class PickupController {
             }
         }
     }
-}
 
+    /**
+     * Recycler - View assigned pickups (processing orders)
+     */
+    @GetMapping("/assigned")
+    public String viewAssignedPickups(@PathVariable String username,
+                                      Authentication auth,
+                                      Model model) {
+        if (auth == null || !auth.getName().equals(username)) {
+            return "redirect:/login";
+        }
+        try {
+            List<PickupRequest> pickupRequests = pickupService.getAssignedPickupsForRecycler(username);
+            model.addAttribute("pickupRequests", pickupRequests);
+            model.addAttribute("username", username);
+            return "user/recycler/pickup-assigned";
+        } catch (Exception e) {
+            try {
+                return "redirect:/" + username + "/dashboard?error=" + URLEncoder.encode("Error loading assigned pickups", "UTF-8");
+            } catch (UnsupportedEncodingException ex) {
+                return "redirect:/" + username + "/dashboard";
+            }
+        }
+    }
+
+    /**
+     * Recycler - Update status for assigned pickup
+     */
+    @PostMapping("/status/{pickupId}")
+    public String updatePickupStatus(@PathVariable String username,
+                                     @PathVariable Long pickupId,
+                                     @RequestParam PickupRequest.PickupStatus status,
+                                     Authentication auth) {
+        if (auth == null || !auth.getName().equals(username)) {
+            return "redirect:/login";
+        }
+        try {
+            pickupService.updateRecyclerPickupStatus(pickupId, username, status);
+            String statusMsg = status == PickupRequest.PickupStatus.COMPLETED ? "Pickup completed" :
+                             status == PickupRequest.PickupStatus.CANCELLED ? "Pickup cancelled" : "Pickup updated";
+            return "redirect:/" + username + "/pickup/assigned?success=" + URLEncoder.encode(statusMsg, "UTF-8");
+        } catch (Exception e) {
+            try {
+                return "redirect:/" + username + "/pickup/assigned?error=" + URLEncoder.encode(e.getMessage(), "UTF-8");
+            } catch (UnsupportedEncodingException ex) {
+                return "redirect:/" + username + "/pickup/assigned";
+            }
+        }
+    }
+
+    /**
+     * Recycler - View order history (completed and cancelled pickups)
+     */
+    @GetMapping("/order-history")
+    public String viewOrderHistory(@PathVariable String username,
+                                   Authentication auth,
+                                   Model model) {
+        if (auth == null || !auth.getName().equals(username)) {
+            return "redirect:/login";
+        }
+        try {
+            List<PickupRequest> orders = pickupService.getCompletedAndCancelledPickupsForRecycler(username);
+            model.addAttribute("orders", orders);
+            model.addAttribute("username", username);
+            return "user/recycler/order-history";
+        } catch (Exception e) {
+            try {
+                return "redirect:/" + username + "/dashboard?error=" + URLEncoder.encode("Error loading order history", "UTF-8");
+            } catch (UnsupportedEncodingException ex) {
+                return "redirect:/" + username + "/dashboard";
+            }
+        }
+    }
+
+    /**
+     * Recycler - View order details
+     */
+    @GetMapping("/order-history/{pickupId}")
+    public String viewOrderDetails(@PathVariable String username,
+                                   @PathVariable Long pickupId,
+                                   Authentication auth,
+                                   Model model) {
+        if (auth == null || !auth.getName().equals(username)) {
+            return "redirect:/login";
+        }
+        try {
+            PickupRequest order = pickupService.getPickupRequestById(pickupId);
+
+            // Check if this order belongs to the recycler
+            if (order.getRecycler() == null || !order.getRecycler().getUsername().equals(username)) {
+                try {
+                    return "redirect:/" + username + "/pickup/order-history?error=" + URLEncoder.encode("Access denied", "UTF-8");
+                } catch (UnsupportedEncodingException ex) {
+                    return "redirect:/" + username + "/pickup/order-history";
+                }
+            }
+
+            model.addAttribute("order", order);
+            model.addAttribute("username", username);
+            return "user/recycler/order-details";
+        } catch (Exception e) {
+            try {
+                return "redirect:/" + username + "/pickup/order-history?error=" + URLEncoder.encode("Error loading order details", "UTF-8");
+            } catch (UnsupportedEncodingException ex) {
+                return "redirect:/" + username + "/pickup/order-history";
+            }
+        }
+    }
+}

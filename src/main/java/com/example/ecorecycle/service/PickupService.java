@@ -188,5 +188,90 @@ public class PickupService {
         pickupRequest.setStatus(PickupRequest.PickupStatus.REJECTED);
         return pickupRequestRepository.save(pickupRequest);
     }
-}
 
+    /**
+     * Get assigned pickups for recycler in processing pipeline
+     */
+    public List<PickupRequest> getAssignedPickupsForRecycler(String username) {
+        BaseUser recycler = baseUserRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Recycler not found"));
+        if (recycler.getRole() != Role.ROLE_RECYCLER) {
+            throw new RuntimeException("User is not a recycler");
+        }
+        List<PickupRequest.PickupStatus> statuses = List.of(
+                PickupRequest.PickupStatus.ACCEPTED,
+                PickupRequest.PickupStatus.SCHEDULED,
+                PickupRequest.PickupStatus.IN_PROGRESS,
+                PickupRequest.PickupStatus.DELAYED
+        );
+        return pickupRequestRepository.findByRecyclerAndStatusInOrderByCreatedAtDesc(recycler, statuses);
+    }
+
+    /**
+     * Update status for recycler-assigned pickup
+     */
+    @Transactional
+    public PickupRequest updateRecyclerPickupStatus(Long pickupId, String recyclerUsername, PickupRequest.PickupStatus newStatus) {
+        PickupRequest pickupRequest = getPickupRequestById(pickupId);
+        BaseUser recycler = baseUserRepository.findByUsername(recyclerUsername)
+                .orElseThrow(() -> new RuntimeException("Recycler not found"));
+
+        if (pickupRequest.getRecycler() == null || !pickupRequest.getRecycler().getUserId().equals(recycler.getUserId())) {
+            throw new RuntimeException("You are not assigned to this pickup");
+        }
+
+        // Allow cancellation at any time except when already completed or cancelled
+        if (newStatus == PickupRequest.PickupStatus.CANCELLED) {
+            if (pickupRequest.getStatus() == PickupRequest.PickupStatus.COMPLETED) {
+                throw new RuntimeException("Cannot cancel a completed pickup");
+            }
+            if (pickupRequest.getStatus() == PickupRequest.PickupStatus.CANCELLED) {
+                throw new RuntimeException("Pickup already cancelled");
+            }
+            // Allow cancellation from any other state
+        } else {
+            // Valid transitions for status progression
+            if (pickupRequest.getStatus() == PickupRequest.PickupStatus.ACCEPTED &&
+                    (newStatus == PickupRequest.PickupStatus.SCHEDULED || newStatus == PickupRequest.PickupStatus.IN_PROGRESS || newStatus == PickupRequest.PickupStatus.DELAYED)) {
+                // allow
+            } else if (pickupRequest.getStatus() == PickupRequest.PickupStatus.SCHEDULED &&
+                    (newStatus == PickupRequest.PickupStatus.IN_PROGRESS || newStatus == PickupRequest.PickupStatus.DELAYED)) {
+                // allow
+            } else if (pickupRequest.getStatus() == PickupRequest.PickupStatus.IN_PROGRESS &&
+                    (newStatus == PickupRequest.PickupStatus.COMPLETED || newStatus == PickupRequest.PickupStatus.DELAYED)) {
+                // allow
+            } else if (pickupRequest.getStatus() == PickupRequest.PickupStatus.DELAYED &&
+                    (newStatus == PickupRequest.PickupStatus.IN_PROGRESS || newStatus == PickupRequest.PickupStatus.COMPLETED)) {
+                // allow
+            } else if (pickupRequest.getStatus() == PickupRequest.PickupStatus.COMPLETED) {
+                throw new RuntimeException("Pickup already completed");
+            } else {
+                throw new RuntimeException("Invalid status transition");
+            }
+        }
+
+        pickupRequest.setStatus(newStatus);
+        if (newStatus == PickupRequest.PickupStatus.COMPLETED) {
+            pickupRequest.setCompletedAt(java.time.LocalDateTime.now());
+        } else if (newStatus == PickupRequest.PickupStatus.CANCELLED) {
+            pickupRequest.setCancelledAt(java.time.LocalDateTime.now());
+        }
+        return pickupRequestRepository.save(pickupRequest);
+    }
+
+    /**
+     * Get completed and cancelled pickups for recycler (order history)
+     */
+    public List<PickupRequest> getCompletedAndCancelledPickupsForRecycler(String username) {
+        BaseUser recycler = baseUserRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Recycler not found"));
+        if (recycler.getRole() != Role.ROLE_RECYCLER) {
+            throw new RuntimeException("User is not a recycler");
+        }
+        List<PickupRequest.PickupStatus> statuses = List.of(
+                PickupRequest.PickupStatus.COMPLETED,
+                PickupRequest.PickupStatus.CANCELLED
+        );
+        return pickupRequestRepository.findByRecyclerAndStatusInOrderByCreatedAtDesc(recycler, statuses);
+    }
+}

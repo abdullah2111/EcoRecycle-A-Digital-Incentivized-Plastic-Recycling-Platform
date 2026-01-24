@@ -61,7 +61,8 @@
         <nav class="sidebar-menu">
             <a th:href="@{'/' + ${username} + '/dashboard'}" class="menu-item active"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
             <a th:href="@{'/' + ${username} + '/pickup/requests'}" class="menu-item"><i class="bi bi-inbox-fill"></i><span>View Requests</span></a>
-            <a href="#" class="menu-item"><i class="bi bi-check2-square"></i><span>Completed Pickups</span></a>
+            <a th:href="@{'/' + ${username} + '/pickup/assigned'}" class="menu-item"><i class="bi bi-gear-wide-connected"></i><span>Processing Orders</span></a>
+            <a th:href="@{'/' + ${username} + '/pickup/order-history'}" class="menu-item"><i class="bi bi-clock-history"></i><span>Order History</span></a>
             <a href="#" class="menu-item"><i class="bi bi-graph-up"></i><span>Analytics</span></a>
             <a href="#" class="menu-item"><i class="bi bi-star-fill"></i><span>Ratings</span></a>
             <a th:href="@{'/' + ${username} + '/profile'}" class="menu-item"><i class="bi bi-person-circle"></i><span>Profile</span></a>
@@ -96,6 +97,7 @@
 
         <div class="quick-actions">
             <a th:href="@{'/' + ${username} + '/pickup/requests'}" class="action-btn primary" style="text-decoration:none;"><i class="bi bi-list-check"></i> View Requests</a>
+            <a th:href="@{'/' + ${username} + '/pickup/assigned'}" class="action-btn primary" style="text-decoration:none;"><i class="bi bi-gear-wide-connected"></i> Processing Orders</a>
             <button class="action-btn success"><i class="bi bi-graph-up-arrow"></i> View Analytics</button>
         </div>
     </main>

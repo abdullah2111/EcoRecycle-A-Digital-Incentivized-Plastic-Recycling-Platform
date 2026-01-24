@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order History - EcoRecycle</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root { --primary-green:#28a745; --dark-green:#1e7e34; --light-green:#d4edda; --success-green:#20c997; --sidebar-width:260px; }
+        body { font-family:'Segoe UI',sans-serif; background:#f8f9fa; min-height:100vh; margin:0; }
+        .dashboard-container{display:flex; height:100vh;}
+        .sidebar{width:var(--sidebar-width); background:#fff; box-shadow:2px 0 10px rgba(0,0,0,0.05); display:flex; flex-direction:column; position:fixed; height:100vh;}
+        .sidebar-header{padding:25px 20px; background:linear-gradient(135deg,var(--primary-green),var(--dark-green)); color:#fff;}
+        .sidebar-header h2{font-size:24px; margin:0 0 5px; display:flex; align-items:center; gap:10px;}
+        .sidebar-header p{margin:0; opacity:.9; font-size:14px;}
+        .sidebar-menu{flex:1; padding:20px 0; overflow-y:auto;}
+        .menu-item{display:flex; align-items:center; padding:15px 25px; color:#333; text-decoration:none; border-left:3px solid transparent; transition:all .3s;}
+        .menu-item:hover{background:var(--light-green); border-left-color:var(--primary-green); color:var(--dark-green);}
+        .menu-item.active{background:var(--light-green); border-left-color:var(--primary-green); color:var(--primary-green); font-weight:600;}
+        .menu-item i{margin-right:15px; font-size:20px; width:24px;}
+        .logout-btn{margin:20px; padding:12px 20px; background:#dc3545; color:#fff; border:none; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;}
+        .logout-btn:hover{background:#c82333;}
+        .main-content{margin-left:var(--sidebar-width); flex:1; padding:30px; overflow-y:auto;}
+        .content-header{background:#fff; padding:25px 30px; border-radius:12px; margin-bottom:30px; box-shadow:0 2px 8px rgba(0,0,0,0.05); border-left:4px solid var(--primary-green);}
+        .content-header h1{margin:0 0 10px; color:#333; font-size:28px;}
+        .content-header p{margin:0; color:#666;}
+        /* Table Styles */
+        .orders-table{background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.05); overflow-x:auto;}
+        .table{margin:0; border:none; white-space:nowrap;}
+        .table thead{background:linear-gradient(135deg,var(--primary-green),var(--dark-green)); color:#fff;}
+        .table thead th{border:none; padding:12px 15px; font-weight:600; text-transform:uppercase; font-size:12px; letter-spacing:0.5px; white-space:nowrap;}
+        .table tbody td{padding:12px 15px; border-bottom:1px solid #eee; vertical-align:middle; white-space:nowrap; font-size:13px;}
+        .table tbody tr:hover{background:#f8f9fa;}
+        .order-id{font-weight:600; color:var(--primary-green);}
+        .customer-name{font-weight:500; color:#333;}
+        .address-text{font-size:12px; color:#666;}
+        .status-badge{display:inline-block; padding:4px 10px; border-radius:15px; font-size:11px; font-weight:600; text-transform:uppercase;}
+        .status-completed{background:#d4edda; color:#155724;}
+        .status-cancelled{background:#f8d7da; color:#721c24;}
+        .weight-badge{background:#cfe2ff; color:#084298; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:500; white-space:nowrap; display:inline-block;}
+        .date-text{color:#666; font-size:12px; white-space:nowrap;}
+        .view-btn{padding:5px 12px; background:var(--primary-green); color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;}
+        .view-btn:hover{background:var(--dark-green); transform:scale(1.04);}
+        .empty-state{text-align:center; padding:60px 20px; background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.05);}
+        .empty-state i{font-size:64px; color:#ccc; margin-bottom:20px;}
+        .empty-state h3{color:#666; margin-bottom:10px;}
+        .empty-state p{color:#999;}
+        /* Alert Styles */
+        .alert-container{position:fixed; top:80px; right:20px; z-index:9999; max-width:400px;}
+        .alert-success{background:#d4edda; border:1px solid #c3e6cb; color:#155724; padding:12px 20px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); animation:slideIn .3s ease-in-out;}
+        .alert-error{background:#f8d7da; border:1px solid #f5c6cb; color:#721c24; padding:12px 20px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); animation:slideIn .3s ease-in-out;}
+        @keyframes slideIn{from{transform:translateX(400px); opacity:0;}to{transform:translateX(0); opacity:1;}}
+        @keyframes slideOut{from{transform:translateX(0); opacity:1;}to{transform:translateX(400px); opacity:0;}}
+        .alert-fade-out{animation:slideOut .3s ease-in-out forwards;}
+        @media (max-width:768px){.sidebar{width:70px;} .sidebar-header h2 span,.sidebar-header p,.menu-item span{display:none;} .main-content{margin-left:70px;} .table{font-size:12px;} .table thead th,.table tbody td{padding:10px;}}
+    </style>
+</head>
+<body>
+<div class="alert-container" id="alertContainer"></div>
+<div class="dashboard-container">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="bi bi-recycle"></i> <span>EcoRecycle</span></h2>
+            <p th:text="${username}">Username</p>
+        </div>
+        <nav class="sidebar-menu">
+            <a th:href="@{'/' + ${username} + '/dashboard'}" class="menu-item"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+            <a th:href="@{'/' + ${username} + '/pickup/requests'}" class="menu-item"><i class="bi bi-inbox-fill"></i><span>View Requests</span></a>
+            <a th:href="@{'/' + ${username} + '/pickup/assigned'}" class="menu-item"><i class="bi bi-gear-wide-connected"></i><span>Processing Orders</span></a>
+            <a th:href="@{'/' + ${username} + '/pickup/order-history'}" class="menu-item active"><i class="bi bi-clock-history"></i><span>Order History</span></a>
+            <a href="#" class="menu-item"><i class="bi bi-graph-up"></i><span>Analytics</span></a>
+            <a href="#" class="menu-item"><i class="bi bi-star-fill"></i><span>Ratings</span></a>
+            <a th:href="@{'/' + ${username} + '/profile'}" class="menu-item"><i class="bi bi-person-circle"></i><span>Profile</span></a>
+        </nav>
+        <form th:action="@{/logout}" method="post"><button type="submit" class="logout-btn"><i class="bi bi-box-arrow-right"></i> Logout</button></form>
+    </aside>
+
+    <main class="main-content">
+        <div class="content-header">
+            <h1><i class="bi bi-clock-history"></i> Order History</h1>
+            <p>View completed and cancelled orders</p>
+        </div>
+
+        <div class="orders-table" th:if="${orders != null and !orders.isEmpty()}">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Order Date</th>
+                        <th>Customer Name</th>
+                        <th>Address</th>
+                        <th>Weight</th>
+                        <th>Status</th>
+                        <th>Last Update At</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="order, stat : ${orders}">
+                        <td><strong th:text="${stat.count}">1</strong></td>
+                        <td><span class="date-text" th:text="${#temporals.format(order.createdAt, 'MMM dd, yyyy')}">Date</span></td>
+                        <td><span class="customer-name" th:text="${order.userName}">Name</span></td>
+                        <td><span class="address-text" th:text="${order.addressLine + ', ' + order.area}">Address</span></td>
+                        <td><span class="weight-badge" th:text="${order.approxWeight} + ' kg'">Weight</span></td>
+                        <td><span th:class="'status-badge status-' + ${#strings.toLowerCase(order.status.name())}" th:text="${order.status}">Status</span></td>
+                        <td><span class="date-text" th:if="${order.status.name() == 'COMPLETED'}" th:text="${#temporals.format(order.completedAt, 'MMM dd, yyyy')}">Date</span><span class="date-text" th:if="${order.status.name() == 'CANCELLED'}" th:text="${#temporals.format(order.cancelledAt, 'MMM dd, yyyy')}">Date</span></td>
+                        <td><a th:href="@{'/' + ${username} + '/pickup/order-history/' + ${order.pickupId}}" class="view-btn"><i class="bi bi-eye"></i> View</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="empty-state" th:if="${orders == null or orders.isEmpty()}">
+            <i class="bi bi-inbox"></i>
+            <h3>No Order History</h3>
+            <p>Your completed and cancelled orders will appear here.</p>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function showAlert(message, type) {
+        const container = document.getElementById('alertContainer');
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.textContent = message;
+        container.appendChild(alertDiv);
+        setTimeout(() => { alertDiv.classList.add('alert-fade-out'); setTimeout(() => alertDiv.remove(), 300); }, 4000);
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        const params = new URLSearchParams(window.location.search);
+        const success = params.get('success');
+        const error = params.get('error');
+        if (success) { showAlert(decodeURIComponent(success), 'success'); }
+        if (error) { showAlert(decodeURIComponent(error), 'error'); }
+    });
+</script>
+</body>
+</html>
+
