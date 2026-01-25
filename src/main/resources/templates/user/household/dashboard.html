@@ -290,13 +290,13 @@
                 <i class="bi bi-speedometer2"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="#" class="menu-item">
+            <a th:href="@{'/' + ${username} + '/pickup/my-orders'}" class="menu-item">
                 <i class="bi bi-box-seam"></i>
-                <span>Request Pickup</span>
+                <span>My Orders</span>
             </a>
-            <a href="#" class="menu-item">
+            <a th:href="@{'/' + ${username} + '/pickup/order-history'}" class="menu-item">
                 <i class="bi bi-clock-history"></i>
-                <span>Pickup History</span>
+                <span>Order History</span>
             </a>
             <a href="#" class="menu-item">
                 <i class="bi bi-star-fill"></i>
@@ -337,7 +337,7 @@
                     <h3>Total Eco Points</h3>
                 </div>
                 <div class="stat-value" th:text="${profile.ecoPoints}">0</div>
-                <div class="stat-change">+20 this week</div>
+                <div class="stat-change">Keep recycling to earn more!</div>
             </div>
 
             <div class="stat-card blue">

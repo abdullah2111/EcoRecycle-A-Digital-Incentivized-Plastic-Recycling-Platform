@@ -1,10 +1,10 @@
 package com.example.ecorecycle.service;
 
 import com.example.ecorecycle.dto.PickupRequestDto;
-import com.example.ecorecycle.entity.BaseUser;
-import com.example.ecorecycle.entity.PickupRequest;
-import com.example.ecorecycle.entity.Role;
+import com.example.ecorecycle.entity.*;
 import com.example.ecorecycle.repository.BaseUserRepository;
+import com.example.ecorecycle.repository.BusinessProfileRepository;
+import com.example.ecorecycle.repository.HouseholdProfileRepository;
 import com.example.ecorecycle.repository.PickupRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +19,9 @@ public class PickupService {
 
     private final PickupRequestRepository pickupRequestRepository;
     private final BaseUserRepository baseUserRepository;
+    private final HouseholdProfileRepository householdProfileRepository;
+    private final BusinessProfileRepository businessProfileRepository;
+    private final EcoPointsService ecoPointsService;
 
     /**
      * Create a new pickup request
@@ -75,11 +78,27 @@ public class PickupService {
     }
 
     /**
+     * Get user by username
+     */
+    public BaseUser getUserByUsername(String username) {
+        return baseUserRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    /**
      * Get pickup request by ID
      */
     public PickupRequest getPickupRequestById(Long pickupId) {
         return pickupRequestRepository.findById(pickupId)
                 .orElseThrow(() -> new RuntimeException("Pickup request not found"));
+    }
+
+    /**
+     * Save pickup request (for updates)
+     */
+    @Transactional
+    public PickupRequest savePickupRequest(PickupRequest pickupRequest) {
+        return pickupRequestRepository.save(pickupRequest);
     }
 
     /**
@@ -92,23 +111,37 @@ public class PickupService {
 
         // Set timestamps based on status
         if (newStatus == PickupRequest.PickupStatus.COMPLETED) {
-            pickupRequest.setCompletedAt(LocalDateTime.now());
+            pickupRequest.setCompletedAt(java.time.LocalDateTime.now());
         } else if (newStatus == PickupRequest.PickupStatus.CANCELLED) {
-            pickupRequest.setCancelledAt(LocalDateTime.now());
+            pickupRequest.setCancelledAt(java.time.LocalDateTime.now());
         }
 
         return pickupRequestRepository.save(pickupRequest);
     }
 
     /**
-     * Cancel pickup request
+     * Cancel pickup request by user
      */
     @Transactional
     public PickupRequest cancelPickupRequest(Long pickupId, String reason) {
         PickupRequest pickupRequest = getPickupRequestById(pickupId);
         pickupRequest.setStatus(PickupRequest.PickupStatus.CANCELLED);
-        pickupRequest.setCancelledAt(LocalDateTime.now());
+        pickupRequest.setCancelledAt(java.time.LocalDateTime.now());
         pickupRequest.setCancellationReason(reason);
+        pickupRequest.setCancelledBy("USER");
+        return pickupRequestRepository.save(pickupRequest);
+    }
+
+    /**
+     * Cancel pickup request by recycler
+     */
+    @Transactional
+    public PickupRequest cancelPickupRequestByRecycler(Long pickupId, String reason) {
+        PickupRequest pickupRequest = getPickupRequestById(pickupId);
+        pickupRequest.setStatus(PickupRequest.PickupStatus.CANCELLED);
+        pickupRequest.setCancelledAt(java.time.LocalDateTime.now());
+        pickupRequest.setCancellationReason(reason);
+        pickupRequest.setCancelledBy("RECYCLER");
         return pickupRequestRepository.save(pickupRequest);
     }
 
@@ -228,7 +261,6 @@ public class PickupService {
             if (pickupRequest.getStatus() == PickupRequest.PickupStatus.CANCELLED) {
                 throw new RuntimeException("Pickup already cancelled");
             }
-            // Allow cancellation from any other state
         } else {
             // Valid transitions for status progression
             if (pickupRequest.getStatus() == PickupRequest.PickupStatus.ACCEPTED &&
@@ -253,6 +285,32 @@ public class PickupService {
         pickupRequest.setStatus(newStatus);
         if (newStatus == PickupRequest.PickupStatus.COMPLETED) {
             pickupRequest.setCompletedAt(java.time.LocalDateTime.now());
+
+            // Calculate eco points and award to the user's profile (household or business)
+            Long ecoPoints = ecoPointsService.calculateEcoPoints(
+                    pickupRequest.getPlasticTypes(),
+                    pickupRequest.getApproxWeight()
+            );
+
+            BaseUser pickupUser = pickupRequest.getUser();
+            if (pickupUser.getRole() == Role.ROLE_HOUSEHOLD) {
+                householdProfileRepository.findById(pickupUser.getUserId())
+                        .ifPresent(profile -> {
+                            if (profile.getEcoPoints() == null) profile.setEcoPoints(0L);
+                            profile.setEcoPoints(profile.getEcoPoints() + ecoPoints);
+                            householdProfileRepository.save(profile);
+                        });
+            } else if (pickupUser.getRole() == Role.ROLE_BUSINESS) {
+                businessProfileRepository.findById(pickupUser.getUserId())
+                        .ifPresent(profile -> {
+                            if (profile.getEcoPoints() == null) profile.setEcoPoints(0L);
+                            profile.setEcoPoints(profile.getEcoPoints() + ecoPoints);
+                            businessProfileRepository.save(profile);
+                        });
+            }
+
+            // Do NOT store points on pickup entity per requirement
+            // (if the column exists, we intentionally ignore setting it)
         } else if (newStatus == PickupRequest.PickupStatus.CANCELLED) {
             pickupRequest.setCancelledAt(java.time.LocalDateTime.now());
         }
@@ -273,5 +331,48 @@ public class PickupService {
                 PickupRequest.PickupStatus.CANCELLED
         );
         return pickupRequestRepository.findByRecyclerAndStatusInOrderByCreatedAtDesc(recycler, statuses);
+    }
+
+    /**
+     * Submit review for completed pickup
+     */
+    @Transactional
+    public PickupRequest submitReview(Long pickupId, Integer rating, String comment) {
+        PickupRequest pickupRequest = getPickupRequestById(pickupId);
+
+        if (pickupRequest.getStatus() != PickupRequest.PickupStatus.COMPLETED) {
+            throw new RuntimeException("Can only review completed pickups");
+        }
+
+        if (pickupRequest.getRating() != null) {
+            throw new RuntimeException("Pickup already reviewed");
+        }
+
+        if (rating < 1 || rating > 5) {
+            throw new RuntimeException("Rating must be between 1 and 5");
+        }
+
+        pickupRequest.setRating(rating);
+        pickupRequest.setReviewComment(comment);
+        pickupRequest.setReviewedAt(LocalDateTime.now());
+
+        // Update recycler's rating if needed (you can implement average rating logic here)
+
+        return pickupRequestRepository.save(pickupRequest);
+    }
+
+    /**
+     * Acknowledge completed order (mark as seen by user)
+     */
+    @Transactional
+    public PickupRequest acknowledgeOrder(Long pickupId) {
+        PickupRequest pickupRequest = getPickupRequestById(pickupId);
+
+        if (pickupRequest.getStatus() != PickupRequest.PickupStatus.COMPLETED) {
+            throw new RuntimeException("Can only acknowledge completed orders");
+        }
+
+        pickupRequest.setAcknowledged(true);
+        return pickupRequestRepository.save(pickupRequest);
     }
 }

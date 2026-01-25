@@ -108,12 +108,33 @@ public class PickupRequest {
     @Column(name = "cancellation_reason", columnDefinition = "TEXT")
     private String cancellationReason;
 
+    @Column(name = "cancelled_by", length = 20)
+    private String cancelledBy; // USER or RECYCLER
+
     // Contact Information
     @Column(name = "contact_phone", nullable = false)
     private String contactPhone;
 
     @Column(name = "contact_email")
     private String contactEmail;
+
+    @Column(name = "eco_points_awarded")
+    @Builder.Default
+    private Long ecoPointsAwarded = 0L;
+
+    // Review fields
+    @Column(name = "rating")
+    private Integer rating; // 1-5 star rating
+
+    @Column(name = "review_comment", columnDefinition = "TEXT")
+    private String reviewComment;
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
+
+    @Column(name = "acknowledged")
+    @Builder.Default
+    private Boolean acknowledged = false; // User acknowledged completed order
 
     /**
      * Enum for Pickup Request Status

@@ -1,7 +1,9 @@
 package com.example.ecorecycle.controller;
 
 import com.example.ecorecycle.dto.PickupRequestDto;
+import com.example.ecorecycle.entity.BaseUser;
 import com.example.ecorecycle.entity.PickupRequest;
+import com.example.ecorecycle.entity.Role;
 import com.example.ecorecycle.service.PickupService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -133,6 +135,89 @@ public class PickupController {
                        URLEncoder.encode("Error loading pickup details", "UTF-8");
             } catch (UnsupportedEncodingException ex) {
                 return "redirect:/" + username + "/pickup/history";
+            }
+        }
+    }
+
+    /**
+     * Edit PENDING pickup request - GET (show form)
+     */
+    @GetMapping("/edit/{pickupId}")
+    public String editPickupForm(@PathVariable String username,
+                                 @PathVariable Long pickupId,
+                                 Authentication auth,
+                                 Model model) {
+        if (auth == null || !auth.getName().equals(username)) {
+            return "redirect:/login";
+        }
+
+        try {
+            PickupRequest pickupRequest = pickupService.getPickupRequestById(pickupId);
+
+            // Verify order belongs to this user and is PENDING
+            if (!pickupRequest.getUser().getUsername().equals(username)) {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Unauthorized access", "UTF-8");
+            }
+
+            if (pickupRequest.getStatus() != PickupRequest.PickupStatus.PENDING) {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Can only edit pending orders", "UTF-8");
+            }
+
+            model.addAttribute("order", pickupRequest);
+            model.addAttribute("username", username);
+            model.addAttribute("plasticTypesArray", pickupRequest.getPlasticTypes().split(","));
+            return "user/pickup/edit-order";
+        } catch (Exception e) {
+            try {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Error loading edit form: " + e.getMessage(), "UTF-8");
+            } catch (UnsupportedEncodingException ex) {
+                return "redirect:/" + username + "/pickup/my-orders";
+            }
+        }
+    }
+
+    /**
+     * Edit PENDING pickup request - POST (save changes)
+     */
+    @PostMapping("/edit/{pickupId}")
+    public String updatePickupRequest(@PathVariable String username,
+                                      @PathVariable Long pickupId,
+                                      Authentication auth,
+                                      @RequestParam List<String> plasticTypes,
+                                      @RequestParam Double approxWeight,
+                                      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate preferredDate,
+                                      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime preferredTime,
+                                      @RequestParam(required = false) String additionalNotes) {
+        if (auth == null || !auth.getName().equals(username)) {
+            return "redirect:/login";
+        }
+
+        try {
+            PickupRequest pickupRequest = pickupService.getPickupRequestById(pickupId);
+
+            // Verify order belongs to this user and is PENDING
+            if (!pickupRequest.getUser().getUsername().equals(username)) {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Unauthorized access", "UTF-8");
+            }
+
+            if (pickupRequest.getStatus() != PickupRequest.PickupStatus.PENDING) {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Can only edit pending orders", "UTF-8");
+            }
+
+            // Update the pickup request
+            pickupRequest.setPlasticTypes(String.join(",", plasticTypes));
+            pickupRequest.setApproxWeight(approxWeight);
+            pickupRequest.setPreferredDate(preferredDate);
+            pickupRequest.setPreferredTime(preferredTime);
+            pickupRequest.setAdditionalNotes(additionalNotes);
+            pickupService.savePickupRequest(pickupRequest);
+
+            return "redirect:/" + username + "/pickup/my-orders?success=" + URLEncoder.encode("Order updated successfully", "UTF-8");
+        } catch (Exception e) {
+            try {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Error updating order: " + e.getMessage(), "UTF-8");
+            } catch (UnsupportedEncodingException ex) {
+                return "redirect:/" + username + "/pickup/my-orders";
             }
         }
     }
@@ -323,7 +408,105 @@ public class PickupController {
     }
 
     /**
-     * Recycler - View order history (completed and cancelled pickups)
+     * Recycler - View individual order details from history
+     */
+    @GetMapping("/order-history/{pickupId}")
+    public String viewRecyclerOrderHistoryDetail(@PathVariable String username,
+                                                 @PathVariable Long pickupId,
+                                                 Authentication auth,
+                                                 Model model) {
+        if (auth == null || !auth.getName().equals(username)) {
+            return "redirect:/login";
+        }
+        try {
+            PickupRequest order = pickupService.getPickupRequestById(pickupId);
+
+            // Verify order belongs to this recycler
+            if (order.getRecycler() == null || !order.getRecycler().getUsername().equals(username)) {
+                return "redirect:/" + username + "/pickup/order-history?error=" + URLEncoder.encode("Unauthorized access", "UTF-8");
+            }
+
+            model.addAttribute("order", order);
+            model.addAttribute("username", username);
+            return "user/pickup/order-details";
+        } catch (Exception e) {
+            try {
+                return "redirect:/" + username + "/pickup/order-history?error=" + URLEncoder.encode("Error loading order details", "UTF-8");
+            } catch (UnsupportedEncodingException ex) {
+                return "redirect:/" + username + "/pickup/order-history";
+            }
+        }
+    }
+
+    /**
+     * View active/pending orders for user (household/business)
+     * Shows:
+     * - PENDING, ACCEPTED, SCHEDULED, IN_PROGRESS, DELAYED (with cancel option)
+     * - COMPLETED (unacknowledged) - with rate/ok options
+     * - CANCELLED by RECYCLER only (unacknowledged) - with ok option to clear
+     * - Does NOT show orders cancelled by USER
+     */
+    @GetMapping("/my-orders")
+    public String viewMyOrders(@PathVariable String username,
+                               Authentication auth,
+                               Model model) {
+        if (auth == null || !auth.getName().equals(username)) {
+            return "redirect:/login";
+        }
+
+        try {
+            List<PickupRequest> pickupRequests = pickupService.getUserPickupRequests(username);
+
+            // Filter for:
+            // 1. Active running orders (PENDING, ACCEPTED, SCHEDULED, IN_PROGRESS, DELAYED)
+            // 2. COMPLETED orders that haven't been acknowledged
+            // 3. CANCELLED orders by RECYCLER that haven't been acknowledged
+            // 4. EXCLUDE orders cancelled by USER
+            List<PickupRequest> activeOrders = pickupRequests.stream()
+                    .filter(pr -> {
+                        // Show if not acknowledged (null or false)
+                        boolean notAcknowledged = pr.getAcknowledged() == null || !pr.getAcknowledged();
+
+                        // Show running orders
+                        if (pr.getStatus() == PickupRequest.PickupStatus.PENDING ||
+                            pr.getStatus() == PickupRequest.PickupStatus.ACCEPTED ||
+                            pr.getStatus() == PickupRequest.PickupStatus.SCHEDULED ||
+                            pr.getStatus() == PickupRequest.PickupStatus.IN_PROGRESS ||
+                            pr.getStatus() == PickupRequest.PickupStatus.DELAYED) {
+                            return true;
+                        }
+
+                        // Show completed if not acknowledged
+                        if (pr.getStatus() == PickupRequest.PickupStatus.COMPLETED && notAcknowledged) {
+                            return true;
+                        }
+
+                        // Show cancelled ONLY if cancelled by RECYCLER and not acknowledged
+                        if (pr.getStatus() == PickupRequest.PickupStatus.CANCELLED &&
+                            "RECYCLER".equals(pr.getCancelledBy()) && notAcknowledged) {
+                            return true;
+                        }
+
+                        return false;
+                    })
+                    .toList();
+
+            model.addAttribute("orders", activeOrders);
+            model.addAttribute("username", username);
+            return "user/pickup/my-orders";
+        } catch (Exception e) {
+            e.printStackTrace(); // Log the error
+            try {
+                return "redirect:/" + username + "/dashboard?error=" + URLEncoder.encode("Error loading orders: " + e.getMessage(), "UTF-8");
+            } catch (UnsupportedEncodingException ex) {
+                return "redirect:/" + username + "/dashboard";
+            }
+        }
+    }
+
+    /**
+     * View order history for user/recycler (completed/cancelled orders)
+     * Universal endpoint that handles both users and recyclers
      */
     @GetMapping("/order-history")
     public String viewOrderHistory(@PathVariable String username,
@@ -332,11 +515,30 @@ public class PickupController {
         if (auth == null || !auth.getName().equals(username)) {
             return "redirect:/login";
         }
+
         try {
-            List<PickupRequest> orders = pickupService.getCompletedAndCancelledPickupsForRecycler(username);
+            // Get the user to check their role
+            BaseUser user = pickupService.getUserByUsername(username);
+            List<PickupRequest> orders;
+            String templatePath;
+
+            if (user.getRole() == Role.ROLE_RECYCLER) {
+                // Recycler: get their completed and cancelled pickups
+                orders = pickupService.getCompletedAndCancelledPickupsForRecycler(username);
+                templatePath = "user/recycler/order-history";
+            } else {
+                // User (Household/Business): get their completed and cancelled requests
+                List<PickupRequest> pickupRequests = pickupService.getUserPickupRequests(username);
+                orders = pickupRequests.stream()
+                        .filter(pr -> pr.getStatus() == PickupRequest.PickupStatus.COMPLETED
+                                   || pr.getStatus() == PickupRequest.PickupStatus.CANCELLED)
+                        .toList();
+                templatePath = "user/pickup/order-history";
+            }
+
             model.addAttribute("orders", orders);
             model.addAttribute("username", username);
-            return "user/recycler/order-history";
+            return templatePath;
         } catch (Exception e) {
             try {
                 return "redirect:/" + username + "/dashboard?error=" + URLEncoder.encode("Error loading order history", "UTF-8");
@@ -347,36 +549,157 @@ public class PickupController {
     }
 
     /**
-     * Recycler - View order details
+     * View single order details
      */
-    @GetMapping("/order-history/{pickupId}")
+    @GetMapping("/order/{orderId}")
     public String viewOrderDetails(@PathVariable String username,
-                                   @PathVariable Long pickupId,
+                                   @PathVariable Long orderId,
                                    Authentication auth,
                                    Model model) {
         if (auth == null || !auth.getName().equals(username)) {
             return "redirect:/login";
         }
-        try {
-            PickupRequest order = pickupService.getPickupRequestById(pickupId);
 
-            // Check if this order belongs to the recycler
-            if (order.getRecycler() == null || !order.getRecycler().getUsername().equals(username)) {
-                try {
-                    return "redirect:/" + username + "/pickup/order-history?error=" + URLEncoder.encode("Access denied", "UTF-8");
-                } catch (UnsupportedEncodingException ex) {
-                    return "redirect:/" + username + "/pickup/order-history";
-                }
+        try {
+            PickupRequest order = pickupService.getPickupRequestById(orderId);
+
+            // Verify order belongs to this user
+            if (!order.getUser().getUsername().equals(username)) {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Unauthorized access", "UTF-8");
             }
 
             model.addAttribute("order", order);
             model.addAttribute("username", username);
-            return "user/recycler/order-details";
+            return "user/pickup/order-details";
         } catch (Exception e) {
             try {
-                return "redirect:/" + username + "/pickup/order-history?error=" + URLEncoder.encode("Error loading order details", "UTF-8");
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Order not found", "UTF-8");
             } catch (UnsupportedEncodingException ex) {
-                return "redirect:/" + username + "/pickup/order-history";
+                return "redirect:/" + username + "/pickup/my-orders";
+            }
+        }
+    }
+
+    /**
+     * Cancel an order (user can cancel if not completed)
+     */
+    @PostMapping("/order/{orderId}/cancel")
+    public String cancelOrder(@PathVariable String username,
+                             @PathVariable Long orderId,
+                             @RequestParam(required = false) String reason,
+                             Authentication auth,
+                             RedirectAttributes redirectAttributes) {
+        if (auth == null || !auth.getName().equals(username)) {
+            return "redirect:/login";
+        }
+
+        try {
+            PickupRequest order = pickupService.getPickupRequestById(orderId);
+
+            // Verify order belongs to this user
+            if (!order.getUser().getUsername().equals(username)) {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Unauthorized access", "UTF-8");
+            }
+
+            // Check if order can be cancelled
+            if (order.getStatus() == PickupRequest.PickupStatus.COMPLETED) {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Cannot cancel completed order", "UTF-8");
+            }
+
+            if (order.getStatus() == PickupRequest.PickupStatus.CANCELLED) {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Order already cancelled", "UTF-8");
+            }
+
+            // Cancel the order
+            pickupService.cancelPickupRequest(orderId, reason != null ? reason : "Cancelled by user");
+
+            return "redirect:/" + username + "/pickup/my-orders?success=" + URLEncoder.encode("Order cancelled successfully", "UTF-8");
+        } catch (Exception e) {
+            try {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Error cancelling order: " + e.getMessage(), "UTF-8");
+            } catch (UnsupportedEncodingException ex) {
+                return "redirect:/" + username + "/pickup/my-orders";
+            }
+        }
+    }
+
+    /**
+     * Submit review for completed order
+     */
+    @PostMapping("/order/{orderId}/review")
+    public String submitReview(@PathVariable String username,
+                              @PathVariable Long orderId,
+                              @RequestParam Integer rating,
+                              @RequestParam(required = false) String comment,
+                              Authentication auth) {
+        if (auth == null || !auth.getName().equals(username)) {
+            return "redirect:/login";
+        }
+
+        try {
+            PickupRequest order = pickupService.getPickupRequestById(orderId);
+
+            // Verify order belongs to this user
+            if (!order.getUser().getUsername().equals(username)) {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Unauthorized access", "UTF-8");
+            }
+
+            // Check if order is completed
+            if (order.getStatus() != PickupRequest.PickupStatus.COMPLETED) {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Can only review completed orders", "UTF-8");
+            }
+
+            // Check if already reviewed
+            if (order.getRating() != null) {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Order already reviewed", "UTF-8");
+            }
+
+            // Submit review
+            pickupService.submitReview(orderId, rating, comment);
+
+            return "redirect:/" + username + "/pickup/my-orders?success=" + URLEncoder.encode("Review submitted successfully! Thank you for your feedback.", "UTF-8");
+        } catch (Exception e) {
+            try {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Error submitting review: " + e.getMessage(), "UTF-8");
+            } catch (UnsupportedEncodingException ex) {
+                return "redirect:/" + username + "/pickup/my-orders";
+            }
+        }
+    }
+
+    /**
+     * Acknowledge completed order (mark as seen and move to history)
+     */
+    @PostMapping("/order/{orderId}/acknowledge")
+    public String acknowledgeOrder(@PathVariable String username,
+                                   @PathVariable Long orderId,
+                                   Authentication auth) {
+        if (auth == null || !auth.getName().equals(username)) {
+            return "redirect:/login";
+        }
+
+        try {
+            PickupRequest order = pickupService.getPickupRequestById(orderId);
+
+            // Verify order belongs to this user
+            if (!order.getUser().getUsername().equals(username)) {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Unauthorized access", "UTF-8");
+            }
+
+            // Check if order is completed
+            if (order.getStatus() != PickupRequest.PickupStatus.COMPLETED) {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Can only acknowledge completed orders", "UTF-8");
+            }
+
+            // Acknowledge order
+            pickupService.acknowledgeOrder(orderId);
+
+            return "redirect:/" + username + "/pickup/my-orders?success=" + URLEncoder.encode("Order acknowledged successfully", "UTF-8");
+        } catch (Exception e) {
+            try {
+                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Error acknowledging order: " + e.getMessage(), "UTF-8");
+            } catch (UnsupportedEncodingException ex) {
+                return "redirect:/" + username + "/pickup/my-orders";
             }
         }
     }

@@ -354,8 +354,8 @@
             </div>
             <nav class="sidebar-menu">
                 <a th:href="@{'/' + ${username} + '/dashboard'}" class="menu-item active"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
-                <a href="#" class="menu-item"><i class="bi bi-box-seam"></i><span>Request Pickup</span></a>
-                <a href="#" class="menu-item"><i class="bi bi-clock-history"></i><span>Pickup History</span></a>
+                <a th:href="@{'/' + ${username} + '/pickup/my-orders'}" class="menu-item"><i class="bi bi-box-seam"></i><span>My Orders</span></a>
+                <a th:href="@{'/' + ${username} + '/pickup/order-history'}" class="menu-item"><i class="bi bi-clock-history"></i><span>Order History</span></a>
                 <a href="#" class="menu-item"><i class="bi bi-star-fill"></i><span>Eco Points</span></a>
                 <a href="#" class="menu-item"><i class="bi bi-gift"></i><span>Redeem Gifts</span></a>
                 <a th:href="@{'/' + ${username} + '/profile'}" class="menu-item"><i class="bi bi-person-circle"></i><span>Profile</span></a>
@@ -374,7 +374,7 @@
             <div class="stats-grid">
                 <div class="stat-card green">
                     <div class="stat-card-header"><div class="stat-icon green"><i class="bi bi-star-fill"></i></div><h3>Total Eco Points</h3></div>
-                    <div class="stat-value" th:text="${profile.ecoPoints}">0</div><div class="stat-change">+50 this month</div>
+                    <div class="stat-value" th:text="${profile.ecoPoints}">0</div><div class="stat-change">Keep recycling to earn more!</div>
                 </div>
                 <div class="stat-card blue">
                     <div class="stat-card-header"><div class="stat-icon blue"><i class="bi bi-box-seam-fill"></i></div><h3>Total Pickups</h3></div>
