@@ -292,6 +292,9 @@ public class PickupService {
                     pickupRequest.getApproxWeight()
             );
 
+            // Store eco points on pickup request for display in timeline
+            pickupRequest.setEcoPointsAwarded(ecoPoints);
+
             BaseUser pickupUser = pickupRequest.getUser();
             if (pickupUser.getRole() == Role.ROLE_HOUSEHOLD) {
                 householdProfileRepository.findById(pickupUser.getUserId())
@@ -308,9 +311,6 @@ public class PickupService {
                             businessProfileRepository.save(profile);
                         });
             }
-
-            // Do NOT store points on pickup entity per requirement
-            // (if the column exists, we intentionally ignore setting it)
         } else if (newStatus == PickupRequest.PickupStatus.CANCELLED) {
             pickupRequest.setCancelledAt(java.time.LocalDateTime.now());
         }
@@ -374,5 +374,24 @@ public class PickupService {
 
         pickupRequest.setAcknowledged(true);
         return pickupRequestRepository.save(pickupRequest);
+    }
+
+    /**
+     * Ensure eco points are awarded for completed pickups (backfill helper)
+     */
+    @Transactional
+    public PickupRequest ensureEcoPointsAwarded(PickupRequest pickupRequest) {
+        if (pickupRequest.getStatus() == PickupRequest.PickupStatus.COMPLETED) {
+            Long currentPoints = pickupRequest.getEcoPointsAwarded();
+            if (currentPoints == null || currentPoints == 0L) {
+                Long ecoPoints = ecoPointsService.calculateEcoPoints(
+                        pickupRequest.getPlasticTypes(),
+                        pickupRequest.getApproxWeight()
+                );
+                pickupRequest.setEcoPointsAwarded(ecoPoints);
+                return pickupRequestRepository.save(pickupRequest);
+            }
+        }
+        return pickupRequest;
     }
 }

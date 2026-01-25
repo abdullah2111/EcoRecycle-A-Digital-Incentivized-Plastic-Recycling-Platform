@@ -525,6 +525,10 @@ public class PickupController {
             if (user.getRole() == Role.ROLE_RECYCLER) {
                 // Recycler: get their completed and cancelled pickups
                 orders = pickupService.getCompletedAndCancelledPickupsForRecycler(username);
+                // Ensure eco points are present for each completed order
+                orders = orders.stream()
+                        .map(pickupService::ensureEcoPointsAwarded)
+                        .toList();
                 templatePath = "user/recycler/order-history";
             } else {
                 // User (Household/Business): get their completed and cancelled requests
@@ -532,6 +536,7 @@ public class PickupController {
                 orders = pickupRequests.stream()
                         .filter(pr -> pr.getStatus() == PickupRequest.PickupStatus.COMPLETED
                                    || pr.getStatus() == PickupRequest.PickupStatus.CANCELLED)
+                        .map(pickupService::ensureEcoPointsAwarded)
                         .toList();
                 templatePath = "user/pickup/order-history";
             }
@@ -568,14 +573,17 @@ public class PickupController {
                 return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Unauthorized access", "UTF-8");
             }
 
+            // Ensure eco points are backfilled for display
+            order = pickupService.ensureEcoPointsAwarded(order);
+
             model.addAttribute("order", order);
             model.addAttribute("username", username);
             return "user/pickup/order-details";
         } catch (Exception e) {
             try {
-                return "redirect:/" + username + "/pickup/my-orders?error=" + URLEncoder.encode("Order not found", "UTF-8");
+                return "redirect:/" + username + "/pickup/history?error=" + URLEncoder.encode("Error loading pickup details", "UTF-8");
             } catch (UnsupportedEncodingException ex) {
-                return "redirect:/" + username + "/pickup/my-orders";
+                return "redirect:/" + username + "/pickup/history";
             }
         }
     }
