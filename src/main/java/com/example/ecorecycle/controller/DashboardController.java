@@ -1,11 +1,14 @@
 package com.example.ecorecycle.controller;
 
 import com.example.ecorecycle.entity.BaseUser;
+import com.example.ecorecycle.entity.PickupRequest;
+import com.example.ecorecycle.entity.RecyclerProfile;
 import com.example.ecorecycle.entity.Role;
 import com.example.ecorecycle.repository.BaseUserRepository;
 import com.example.ecorecycle.repository.HouseholdProfileRepository;
 import com.example.ecorecycle.repository.BusinessProfileRepository;
 import com.example.ecorecycle.repository.RecyclerProfileRepository;
+import com.example.ecorecycle.service.PickupService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -17,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.net.URLEncoder;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
@@ -26,6 +31,7 @@ public class DashboardController {
     private final HouseholdProfileRepository householdProfileRepository;
     private final BusinessProfileRepository businessProfileRepository;
     private final RecyclerProfileRepository recyclerProfileRepository;
+    private final PickupService pickupService;
 
     @GetMapping("/{username}/dashboard")
     public String dashboard(@PathVariable String username, Authentication auth, Model model) {
@@ -50,9 +56,100 @@ public class DashboardController {
             return "user/household/dashboard";
         } else if (user.getRole() == Role.ROLE_BUSINESS) {
             model.addAttribute("profile", user.getBusinessProfile());
+
+            // Calculate business statistics
+            List<PickupRequest> allPickups = pickupService.getUserPickupRequests(username);
+
+            // Total completed pickups
+            long totalPickups = allPickups.stream()
+                    .filter(p -> p.getStatus() == PickupRequest.PickupStatus.COMPLETED)
+                    .count();
+
+            // Total pending/active requests
+            long pendingPickups = allPickups.stream()
+                    .filter(p -> p.getStatus() != PickupRequest.PickupStatus.COMPLETED
+                            && p.getStatus() != PickupRequest.PickupStatus.CANCELLED)
+                    .count();
+
+            // Total waste recycled (kg)
+            double totalWaste = allPickups.stream()
+                    .filter(p -> p.getStatus() == PickupRequest.PickupStatus.COMPLETED)
+                    .mapToDouble(p -> p.getApproxWeight() != null ? p.getApproxWeight() : 0)
+                    .sum();
+
+            // This month stats
+            LocalDateTime monthStart = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+            long thisMonthPickups = allPickups.stream()
+                    .filter(p -> p.getStatus() == PickupRequest.PickupStatus.COMPLETED
+                            && p.getCompletedAt() != null
+                            && p.getCompletedAt().isAfter(monthStart))
+                    .count();
+
+            double thisMonthWaste = allPickups.stream()
+                    .filter(p -> p.getStatus() == PickupRequest.PickupStatus.COMPLETED
+                            && p.getCompletedAt() != null
+                            && p.getCompletedAt().isAfter(monthStart))
+                    .mapToDouble(p -> p.getApproxWeight() != null ? p.getApproxWeight() : 0)
+                    .sum();
+
+            // Average weight per pickup
+            double avgWeight = totalPickups > 0 ? totalWaste / totalPickups : 0;
+
+            model.addAttribute("totalPickups", totalPickups);
+            model.addAttribute("pendingPickups", pendingPickups);
+            model.addAttribute("totalWasteRecycled", totalWaste);
+            model.addAttribute("thisMonthPickups", thisMonthPickups);
+            model.addAttribute("thisMonthWaste", thisMonthWaste);
+            model.addAttribute("avgWeightPerPickup", avgWeight);
+
             return "user/business/dashboard";
         } else if (user.getRole() == Role.ROLE_RECYCLER) {
-            model.addAttribute("profile", user.getRecyclerProfile());
+            RecyclerProfile profile = user.getRecyclerProfile();
+            model.addAttribute("profile", profile);
+
+            // Calculate recycler statistics
+            List<PickupRequest> allPickups = pickupService.getCompletedAndCancelledPickupsForRecycler(username);
+            List<PickupRequest> assignedPickups = pickupService.getAssignedPickupsForRecycler(username);
+
+            // Total completed pickups
+            long completedPickups = allPickups.stream()
+                    .filter(p -> p.getStatus() == PickupRequest.PickupStatus.COMPLETED)
+                    .count();
+
+            // Total pending/active requests
+            long pendingPickups = assignedPickups.size();
+
+            // Total waste recycled (kg)
+            double totalWaste = allPickups.stream()
+                    .filter(p -> p.getStatus() == PickupRequest.PickupStatus.COMPLETED)
+                    .mapToDouble(p -> p.getApproxWeight() != null ? p.getApproxWeight() : 0)
+                    .sum();
+
+            // This month stats
+            LocalDateTime monthStart = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+            long thisMonthPickups = allPickups.stream()
+                    .filter(p -> p.getStatus() == PickupRequest.PickupStatus.COMPLETED
+                            && p.getCompletedAt() != null
+                            && p.getCompletedAt().isAfter(monthStart))
+                    .count();
+
+            double thisMonthWaste = allPickups.stream()
+                    .filter(p -> p.getStatus() == PickupRequest.PickupStatus.COMPLETED
+                            && p.getCompletedAt() != null
+                            && p.getCompletedAt().isAfter(monthStart))
+                    .mapToDouble(p -> p.getApproxWeight() != null ? p.getApproxWeight() : 0)
+                    .sum();
+
+            // Average weight per pickup
+            double avgWeight = completedPickups > 0 ? totalWaste / completedPickups : 0;
+
+            model.addAttribute("completedPickups", completedPickups);
+            model.addAttribute("pendingPickups", pendingPickups);
+            model.addAttribute("totalWasteRecycled", totalWaste);
+            model.addAttribute("thisMonthPickups", thisMonthPickups);
+            model.addAttribute("thisMonthWaste", thisMonthWaste);
+            model.addAttribute("avgWeightPerPickup", avgWeight);
+
             return "user/recycler/dashboard";
         } else if (user.getRole() == Role.ROLE_ADMIN) {
             return "user/admin/dashboard";

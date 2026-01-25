@@ -2,10 +2,7 @@ package com.example.ecorecycle.service;
 
 import com.example.ecorecycle.dto.PickupRequestDto;
 import com.example.ecorecycle.entity.*;
-import com.example.ecorecycle.repository.BaseUserRepository;
-import com.example.ecorecycle.repository.BusinessProfileRepository;
-import com.example.ecorecycle.repository.HouseholdProfileRepository;
-import com.example.ecorecycle.repository.PickupRequestRepository;
+import com.example.ecorecycle.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +18,7 @@ public class PickupService {
     private final BaseUserRepository baseUserRepository;
     private final HouseholdProfileRepository householdProfileRepository;
     private final BusinessProfileRepository businessProfileRepository;
+    private final RecyclerProfileRepository recyclerProfileRepository;
     private final EcoPointsService ecoPointsService;
 
     /**
@@ -344,19 +342,33 @@ public class PickupService {
             throw new RuntimeException("Can only review completed pickups");
         }
 
-        if (pickupRequest.getRating() != null) {
+        // Prevent duplicate reviews: if already reviewed, block
+        if (pickupRequest.getReviewedAt() != null) {
             throw new RuntimeException("Pickup already reviewed");
         }
 
-        if (rating < 1 || rating > 5) {
+        if (rating == null || rating < 1 || rating > 5) {
             throw new RuntimeException("Rating must be between 1 and 5");
         }
 
-        pickupRequest.setRating(rating);
-        pickupRequest.setReviewComment(comment);
-        pickupRequest.setReviewedAt(LocalDateTime.now());
+        // Update recycler's aggregated rating and store last review/comment
+        BaseUser recyclerUser = pickupRequest.getRecycler();
+        if (recyclerUser == null || recyclerUser.getRecyclerProfile() == null) {
+            throw new RuntimeException("Recycler profile not found for this order");
+        }
 
-        // Update recycler's rating if needed (you can implement average rating logic here)
+        RecyclerProfile profile = recyclerUser.getRecyclerProfile();
+        double currentAvg = profile.getRatings() != null ? profile.getRatings() : 0.0;
+        int currentCount = profile.getTotalReviews() != null ? profile.getTotalReviews() : 0;
+        double newAvg = ((currentAvg * currentCount) + rating) / (currentCount + 1);
+        profile.setRatings(newAvg);
+        profile.setTotalReviews(currentCount + 1);
+        profile.setLastReviewComment(comment);
+        profile.setLastReviewedAt(LocalDateTime.now());
+        recyclerProfileRepository.save(profile);
+
+        // Mark pickup as reviewed (do not store rating/comment on pickup per requirement)
+        pickupRequest.setReviewedAt(LocalDateTime.now());
 
         return pickupRequestRepository.save(pickupRequest);
     }

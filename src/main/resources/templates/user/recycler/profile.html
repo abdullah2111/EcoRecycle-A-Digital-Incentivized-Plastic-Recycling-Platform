@@ -367,7 +367,7 @@
                     <i class="bi bi-star-fill"></i> Center Rating
                 </div>
                 <div class="info-value">
-                    <span class="badge bg-warning" th:text="${profile.ratings} + '/5 (' + ${profile.totalReviews} + ' reviews)'">Rating</span>
+                    <span class="badge bg-warning" th:text="${#numbers.formatDecimal(profile.ratings, 1, 1)} + '/5 (' + ${profile.totalReviews} + ' reviews)'">Rating</span>
                 </div>
             </div>
         </div>

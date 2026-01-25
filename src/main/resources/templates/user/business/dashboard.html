@@ -235,7 +235,165 @@
             color: #6c757d;
         }
 
-        .quick-actions {
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-card h4 {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-bar-container {
+            margin: 15px 0;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+        }
+
+        .insights-table {
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .insights-table tr td {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+        }
+
+        .insights-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .insights-table .label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .insights-table .value {
+            color: var(--primary-green);
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .performance-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-excellent {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-good {
+            background: #cfe2ff;
+            color: #084298;
+        }
+
+        .badge-fair {
+            background: #fff3cd;
+            color: #664d03;
+        }
+
+        .mini-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 120px;
+            margin: 20px 0;
+            gap: 8px;
+        }
+
+        .chart-bar {
+            width: 40px;
+            background: linear-gradient(135deg, var(--primary-green), var(--success-green));
+            border-radius: 6px 6px 0 0;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .chart-bar:hover {
+            opacity: 0.8;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .chart-bar-label {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        /* Beautiful Request Pickup Button Styles */
+        .request-pickup-section {
+            display: flex;
+            justify-content: flex-start;
+            margin: 0 0 30px 0;
+        }
+
+        .pickup-button-wrapper {
+            position: relative;
+        }
+
+        .request-pickup-btn {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+            color: #fff;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .request-pickup-btn:hover {
+            box-shadow: 0 6px 16px rgba(40, 167, 69, 0.25);
+        }
+
+        .request-pickup-btn:active {
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.15);
+        }
+
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
@@ -354,10 +512,9 @@
             </div>
             <nav class="sidebar-menu">
                 <a th:href="@{'/' + ${username} + '/dashboard'}" class="menu-item active"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
-                <a th:href="@{'/' + ${username} + '/pickup/my-orders'}" class="menu-item"><i class="bi bi-box-seam"></i><span>My Orders</span></a>
-                <a th:href="@{'/' + ${username} + '/pickup/order-history'}" class="menu-item"><i class="bi bi-clock-history"></i><span>Order History</span></a>
-                <a href="#" class="menu-item"><i class="bi bi-star-fill"></i><span>Eco Points</span></a>
-                <a href="#" class="menu-item"><i class="bi bi-gift"></i><span>Redeem Gifts</span></a>
+                <a th:href="@{'/' + ${username} + '/pickup/my-orders'}" class="menu-item"><i class="bi bi-box-seam"></i><span>My Pickup</span></a>
+                <a th:href="@{'/' + ${username} + '/pickup/order-history'}" class="menu-item"><i class="bi bi-clock-history"></i><span>Pickup History</span></a>
+                <a th:href="@{'/' + ${username} + '/redeem/gifts'}" class="menu-item"><i class="bi bi-gift"></i><span>Redeem Gifts</span></a>
                 <a th:href="@{'/' + ${username} + '/profile'}" class="menu-item"><i class="bi bi-person-circle"></i><span>Profile</span></a>
             </nav>
             <form th:action="@{/logout}" method="post">
@@ -373,26 +530,199 @@
 
             <div class="stats-grid">
                 <div class="stat-card green">
-                    <div class="stat-card-header"><div class="stat-icon green"><i class="bi bi-star-fill"></i></div><h3>Total Eco Points</h3></div>
-                    <div class="stat-value" th:text="${profile.ecoPoints}">0</div><div class="stat-change">Keep recycling to earn more!</div>
+                    <div class="stat-card-header"><div class="stat-icon green"><i class="bi bi-box-seam-fill"></i></div><h3>Total Pickups</h3></div>
+                    <div class="stat-value" th:text="${totalPickups != null ? totalPickups : 0}">0</div>
+                    <div class="stat-change">Completed pickups</div>
                 </div>
                 <div class="stat-card blue">
-                    <div class="stat-card-header"><div class="stat-icon blue"><i class="bi bi-box-seam-fill"></i></div><h3>Total Pickups</h3></div>
-                    <div class="stat-value">0</div><div class="stat-change neutral">No pickups yet</div>
+                    <div class="stat-card-header"><div class="stat-icon blue"><i class="bi bi-hourglass-split"></i></div><h3>Pending Requests</h3></div>
+                    <div class="stat-value" th:text="${pendingPickups != null ? pendingPickups : 0}">0</div>
+                    <div class="stat-change neutral">Awaiting recycler</div>
                 </div>
                 <div class="stat-card orange">
-                    <div class="stat-card-header"><div class="stat-icon orange"><i class="bi bi-recycle"></i></div><h3>Waste Recycled</h3></div>
-                    <div class="stat-value">0 kg</div><div class="stat-change neutral">Start recycling today!</div>
+                    <div class="stat-card-header"><div class="stat-icon orange"><i class="bi bi-recycle"></i></div><h3>Total Waste Recycled</h3></div>
+                    <div class="stat-value" th:text="${totalWasteRecycled != null ? #numbers.formatDecimal(totalWasteRecycled, 1, 1) : 0}">0</div>
+                    <div class="stat-change">kg of plastic</div>
                 </div>
                 <div class="stat-card teal">
-                    <div class="stat-card-header"><div class="stat-icon teal"><i class="bi bi-building"></i></div><h3>Business Status</h3></div>
-                    <div class="stat-value">Active</div><div class="stat-change">Partner with us</div>
+                    <div class="stat-card-header"><div class="stat-icon teal"><i class="bi bi-star-fill"></i></div><h3>Eco Points Earned</h3></div>
+                    <div class="stat-value" th:text="${profile.ecoPoints}">0</div>
+                    <div class="stat-change">Total balance</div>
                 </div>
             </div>
 
-            <div class="quick-actions">
-                <button class="action-btn primary" data-bs-toggle="modal" data-bs-target="#pickupRequestModal"><i class="bi bi-plus-circle"></i> Request New Pickup</button>
-                <button class="action-btn success"><i class="bi bi-graph-up"></i> View Analytics</button>
+            <!-- Request New Pickup Button -->
+            <div class="request-pickup-section">
+                <div class="pickup-button-wrapper">
+                    <button class="request-pickup-btn" data-bs-toggle="modal" data-bs-target="#pickupRequestModal">
+                        <i class="bi bi-plus-circle"></i> Request New Pickup
+                    </button>
+                </div>
+            </div>
+
+            <!-- Charts and Insights Section -->
+            <div class="charts-grid">
+                <!-- Recycling Performance Card -->
+                <div class="chart-card">
+                    <h4><i class="bi bi-graph-up-arrow" style="color: var(--primary-green);"></i> Recycling Performance</h4>
+
+                    <table class="insights-table">
+                        <tr>
+                            <td class="label">This Month Pickups</td>
+                            <td class="value" th:text="${thisMonthPickups != null ? thisMonthPickups : 0}">0</td>
+                        </tr>
+                        <tr>
+                            <td class="label">This Month Waste</td>
+                            <td class="value" th:text="${thisMonthWaste != null ? #numbers.formatDecimal(thisMonthWaste, 1, 1) : 0}">0</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Average Weight/Pickup</td>
+                            <td class="value" th:text="${avgWeightPerPickup != null ? #numbers.formatDecimal(avgWeightPerPickup, 1, 1) : 0}">0</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Performance Status</td>
+                            <td style="text-align: right;">
+                                <span th:if="${totalPickups != null and totalPickups > 5}" class="performance-badge badge-excellent">Excellent</span>
+                                <span th:if="${totalPickups != null and totalPickups > 2 and totalPickups <= 5}" class="performance-badge badge-good">Good</span>
+                                <span th:if="${totalPickups == null or totalPickups <= 2}" class="performance-badge badge-fair">Getting Started</span>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div style="margin-top: 20px;">
+                        <p style="color: #666; font-size: 13px; margin-bottom: 10px;">Monthly Contribution</p>
+                        <div class="progress" style="height: 10px;">
+                            <div th:if="${thisMonthPickups != null and thisMonthPickups > 0}"
+                                 class="progress-bar"
+                                 role="progressbar"
+                                 style="width: 65%; background: linear-gradient(90deg, var(--primary-green), var(--success-green));"
+                                 aria-valuenow="65"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100">
+                            </div>
+                            <div th:if="${thisMonthPickups == null or thisMonthPickups == 0}"
+                                 class="progress-bar"
+                                 role="progressbar"
+                                 style="width: 0%; background: #ddd;"
+                                 aria-valuenow="0"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                        <p style="color: #999; font-size: 11px; margin-top: 8px;">Target: 10 pickups/month</p>
+                    </div>
+                </div>
+
+                <!-- Waste Type Distribution Card -->
+                <div class="chart-card">
+                    <h4><i class="bi bi-pie-chart" style="color: #fd7e14;"></i> Top Plastic Types Recycled</h4>
+
+                    <div class="progress-bar-container">
+                        <div class="progress-label">
+                            <span>PET Bottles</span>
+                            <span th:text="${petPercentage != null ? petPercentage : 0}">0</span>%
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: 35%; background: #28a745;"></div>
+                        </div>
+                    </div>
+
+                    <div class="progress-bar-container">
+                        <div class="progress-label">
+                            <span>HDPE Containers</span>
+                            <span th:text="${hdpePercentage != null ? hdpePercentage : 0}">0</span>%
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: 25%; background: #20c997;"></div>
+                        </div>
+                    </div>
+
+                    <div class="progress-bar-container">
+                        <div class="progress-label">
+                            <span>Plastic Bags (LDPE)</span>
+                            <span th:text="${ldpePercentage != null ? ldpePercentage : 0}">0</span>%
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: 20%; background: #17a2b8;"></div>
+                        </div>
+                    </div>
+
+                    <div class="progress-bar-container">
+                        <div class="progress-label">
+                            <span>Other Plastics</span>
+                            <span th:text="${otherPercentage != null ? otherPercentage : 0}">0</span>%
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: 20%; background: #0d6efd;"></div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px; padding: 12px; background: #f8f9fa; border-radius: 8px;">
+                        <p style="margin: 0; color: #666; font-size: 12px;">
+                            <strong>💡 Tip:</strong> Focus on PET and HDPE for maximum eco-point earnings!
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Eco Points Breakdown Card -->
+                <div class="chart-card">
+                    <h4><i class="bi bi-star-fill" style="color: var(--success-green);"></i> Eco Points Breakdown</h4>
+
+                    <table class="insights-table">
+                        <tr>
+                            <td class="label">Points Earned This Month</td>
+                            <td class="value" th:text="${pointsThisMonth != null ? pointsThisMonth : 0}">0</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Points Redeemed</td>
+                            <td class="value" th:text="${pointsRedeemed != null ? pointsRedeemed : 0}">0</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Current Balance</td>
+                            <td class="value" th:text="${profile.ecoPoints}">0</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Average per Pickup</td>
+                            <td class="value" th:text="${avgPointsPerPickup != null ? #numbers.formatDecimal(avgPointsPerPickup, 1, 0) : 0}">0</td>
+                        </tr>
+                    </table>
+
+                    <div style="margin-top: 20px; padding: 12px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #fd7e14;">
+                        <p style="margin: 0; color: #664d03; font-size: 12px;">
+                            <strong>🎁 Next reward:</strong> <span th:text="${nextRewardPoints != null ? nextRewardPoints : 100}">100</span> points to next gift tier
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Card -->
+                <div class="chart-card">
+                    <h4><i class="bi bi-clock-history" style="color: #0d6efd;"></i> Recent Pickups Summary</h4>
+
+                    <table class="insights-table">
+                        <tr>
+                            <td class="label">Last Pickup Date</td>
+                            <td class="value" th:text="${lastPickupDate != null ? #temporals.format(lastPickupDate, 'MMM dd, yyyy') : 'No pickups yet'}">-</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Completed Pickups</td>
+                            <td class="value" th:text="${completedPickups != null ? completedPickups : 0}">0</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Pending Requests</td>
+                            <td class="value" th:text="${pendingPickups != null ? pendingPickups : 0}">0</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Cancelled Orders</td>
+                            <td class="value" th:text="${cancelledPickups != null ? cancelledPickups : 0}">0</td>
+                        </tr>
+                    </table>
+
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-sm" style="background: var(--primary-green); color: white; width: 100%; border: none; border-radius: 6px; padding: 8px;">
+                            <i class="bi bi-arrow-right"></i> View All Pickups
+                        </button>
+                    </div>
+                </div>
             </div>
         </main>
     </div>

@@ -52,6 +52,14 @@
         .btn-edit:hover{background:#0b5ed7;color:#fff;}
         .btn-ok{background:var(--primary-green);color:#fff;padding:10px 20px;border:none;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;}
         .btn-ok:hover{background:var(--dark-green);}
+        .btn-rate{background:#ffc107;color:#333;padding:10px 20px;border:none;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-weight:600;}
+        .btn-rate:hover{background:#ffb300;color:#333;}
+
+        /* Star Rating Styles */
+        .star-rating{display:flex;gap:10px;justify-content:center;margin:20px 0;font-size:48px;}
+        .star{cursor:pointer;color:#ddd;transition:all 0.2s;user-select:none;}
+        .star:hover{color:#ffc107;transform:scale(1.2);}
+        .star.selected{color:#ffc107;}
 
         /* Timeline Styles */
         .timeline-container{background:#fff;border-radius:12px;padding:30px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
@@ -139,6 +147,18 @@
             <button th:if="${order.status.name() == 'PENDING'}"
                     class="btn-cancel" data-bs-toggle="modal" data-bs-target="#cancelModal">
                 <i class="bi bi-x-circle"></i> Cancel Order
+            </button>
+
+            <!-- Rate Recycler button (for completed orders without review) -->
+            <button th:if="${order.status.name() == 'COMPLETED' and order.reviewedAt == null}"
+                    class="btn-rate" data-bs-toggle="modal" data-bs-target="#ratingModal">
+                <i class="bi bi-star"></i> Rate Recycler
+            </button>
+
+            <!-- Already Rated badge -->
+            <button th:if="${order.status.name() == 'COMPLETED' and order.reviewedAt != null}"
+                    class="btn-ok" disabled style="opacity:0.7;">
+                <i class="bi bi-star-fill"></i> Already Rated
             </button>
 
             <!-- Clear button (for recycler-cancelled orders) -->
@@ -337,6 +357,90 @@
         if (error) { showAlert(decodeURIComponent(error), 'error'); }
     });
 </script>
+
+<!-- Rating Modal -->
+<div class="modal fade" id="ratingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#ffc107,#ffb300);border:none;">
+                <h5 class="modal-title"><i class="bi bi-star-fill"></i> Rate this Recycler</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form th:action="@{'/' + ${username} + '/pickup/order/' + ${order.pickupId} + '/review'}" method="post">
+                <div class="modal-body">
+                    <!-- Recycler Info -->
+                    <div style="text-align:center;margin-bottom:20px;padding:15px;background:#f8f9fa;border-radius:8px;">
+                        <p style="margin:0;font-weight:600;color:#333;" th:text="${order.recycler.recyclerProfile.name}">Recycler Name</p>
+                        <p style="margin:5px 0 0;color:#666;font-size:14px;">How would you rate this recycler?</p>
+                    </div>
+
+                    <!-- Star Rating Selection -->
+                    <div class="star-rating" id="starRating">
+                        <span class="star" data-rating="1" onclick="selectRating(1)">★</span>
+                        <span class="star" data-rating="2" onclick="selectRating(2)">★</span>
+                        <span class="star" data-rating="3" onclick="selectRating(3)">★</span>
+                        <span class="star" data-rating="4" onclick="selectRating(4)">★</span>
+                        <span class="star" data-rating="5" onclick="selectRating(5)">★</span>
+                    </div>
+
+                    <!-- Selected Rating Display -->
+                    <div style="text-align:center;margin-bottom:20px;">
+                        <p style="font-size:18px;color:#666;margin:0;font-weight:600;">
+                            You selected: <span id="selectedRatingDisplay" style="color:#ffc107;font-size:22px;">0</span>/5
+                        </p>
+                    </div>
+
+                    <!-- Hidden rating input -->
+                    <input type="hidden" id="ratingInput" name="rating" value="0">
+
+                    <!-- Comment -->
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-chat-left-text"></i> Your Feedback (Optional)</label>
+                        <textarea name="comment" class="form-control" rows="3" placeholder="Share your experience with this recycler..." style="border:1px solid #ddd;border-radius:6px;"></textarea>
+                    </div>
+
+                    <!-- Rating Scale Info -->
+                    <div style="background:#f8f9fa;padding:10px;border-radius:6px;font-size:12px;color:#666;text-align:center;">
+                        <p style="margin:0;"><span style="color:#ffc107;">★★★★★</span> Excellent Service</p>
+                        <p style="margin:5px 0;"><span style="color:#ffc107;">★★★☆☆</span> Good Service</p>
+                        <p style="margin:0;"><span style="color:#ffc107;">★☆☆☆☆</span> Poor Service</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning" id="submitRatingBtn" disabled style="cursor:not-allowed;opacity:0.6;">
+                        <i class="bi bi-check-circle"></i> Submit Rating
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedRating = 0;
+
+    function selectRating(rating) {
+        selectedRating = rating;
+        document.getElementById('ratingInput').value = rating;
+        document.getElementById('selectedRatingDisplay').textContent = rating;
+
+        // Update star styling
+        const stars = document.querySelectorAll('.star');
+        stars.forEach((star, index) => {
+            if (index + 1 <= rating) {
+                star.classList.add('selected');
+            } else {
+                star.classList.remove('selected');
+            }
+        });
+
+        // Enable submit button
+        const submitBtn = document.getElementById('submitRatingBtn');
+        submitBtn.disabled = false;
+        submitBtn.style.cursor = 'pointer';
+        submitBtn.style.opacity = '1';
+    }
+</script>
 </body>
 </html>
-

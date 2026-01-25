@@ -17,7 +17,7 @@
         .sidebar-menu{flex:1;padding:20px 0;overflow-y:auto;}
         .menu-item{display:flex;align-items:center;padding:15px 25px;color:#333;text-decoration:none;border-left:3px solid transparent;transition:all .3s;}
         .menu-item:hover{background:var(--light-green);border-left-color:var(--primary-green);color:var(--dark-green);}
-        .menu-item.active{background:var(--light-green);border-left-color:var(--primary-green);color:var(--primary-green);font-weight:600;}
+        .menu-item.active{background:var(--light-green);border-left-color:var(--primary-green);color:var,--primary-green);font-weight:600;}
         .menu-item i{margin-right:15px;font-size:20px;width:24px;}
         .logout-btn{margin:20px;padding:12px 20px;background:#dc3545;color:#fff;border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
         .logout-btn:hover{background:#c82333;}
@@ -79,9 +79,9 @@
         </div>
         <nav class="sidebar-menu">
             <a th:href="@{'/' + ${username} + '/dashboard'}" class="menu-item"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
-            <a th:href="@{'/' + ${username} + '/pickup/my-orders'}" class="menu-item active"><i class="bi bi-box-seam"></i><span>My Orders</span></a>
-            <a th:href="@{'/' + ${username} + '/pickup/order-history'}" class="menu-item"><i class="bi bi-clock-history"></i><span>Order History</span></a>
-            <a href="#" class="menu-item"><i class="bi bi-star-fill"></i><span>Eco Points</span></a>
+            <a th:href="@{'/' + ${username} + '/pickup/my-orders'}" class="menu-item active"><i class="bi bi-box-seam"></i><span>My Pickup</span></a>
+            <a th:href="@{'/' + ${username} + '/pickup/order-history'}" class="menu-item"><i class="bi bi-clock-history"></i><span>Pickup History</span></a>
+            <a th:href="@{'/' + ${username} + '/redeem/gifts'}" class="menu-item"><i class="bi bi-gift"></i><span>Redeem Gifts</span></a>
             <a th:href="@{'/' + ${username} + '/profile'}" class="menu-item"><i class="bi bi-person-circle"></i><span>Profile</span></a>
         </nav>
         <form th:action="@{/logout}" method="post"><button type="submit" class="logout-btn"><i class="bi bi-box-arrow-right"></i> Logout</button></form>
@@ -89,7 +89,7 @@
 
     <main class="main-content">
         <div class="content-header">
-            <h1><i class="bi bi-box-seam"></i> My Active Orders</h1>
+            <h1><i class="bi bi-box-seam"></i> My Pickup</h1>
             <p>Track your pending and in-progress pickup requests</p>
         </div>
 
@@ -135,7 +135,7 @@
                     </a>
 
                     <!-- For COMPLETED orders - Show Review and OK buttons -->
-                    <button th:if="${order.status.name() == 'COMPLETED' and order.rating == null}"
+                    <button th:if="${order.status.name() == 'COMPLETED' and order.reviewedAt == null}"
                             class="btn-review" onclick="openReviewModal(this)"
                             th:attr="data-order-id=${order.pickupId},data-recycler=${order.recycler != null ? order.recycler.recyclerProfile.name : 'Recycler'}">
                         <i class="bi bi-star"></i> Rate Recycler
@@ -260,7 +260,9 @@
         const orderId = btn.getAttribute('data-order-id');
         const recyclerName = btn.getAttribute('data-recycler');
         const form = document.getElementById('reviewForm');
-        form.action = '[[${username}]]/pickup/order/' + orderId + '/review';
+        // Build absolute URL using username from the sidebar (avoid Thymeleaf inline in JS)
+        const username = document.querySelector('.sidebar-header p').textContent.trim();
+        form.action = '/' + username + '/pickup/order/' + orderId + '/review';
         document.getElementById('recyclerName').textContent = recyclerName;
         document.getElementById('ratingInput').value = '';
         selectedRating = 0;

@@ -66,4 +66,10 @@ public class RecyclerProfile {
     @Column(name = "total_reviews")
     @Builder.Default
     private Integer totalReviews = 0;
+
+    @Column(name = "last_review_comment", columnDefinition = "TEXT")
+    private String lastReviewComment;
+
+    @Column(name = "last_reviewed_at")
+    private java.time.LocalDateTime lastReviewedAt;
 }
