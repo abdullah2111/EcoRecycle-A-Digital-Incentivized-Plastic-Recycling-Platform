@@ -53,6 +53,96 @@ public class DashboardController {
         // Route to appropriate dashboard based on role
         if (user.getRole() == Role.ROLE_HOUSEHOLD) {
             model.addAttribute("profile", user.getHouseholdProfile());
+
+            List<PickupRequest> allPickups = pickupService.getUserPickupRequests(username);
+            long totalPickups = allPickups.stream()
+                    .filter(p -> p.getStatus() == PickupRequest.PickupStatus.COMPLETED)
+                    .count();
+            long pendingPickups = allPickups.stream()
+                    .filter(p -> p.getStatus() != PickupRequest.PickupStatus.COMPLETED
+                            && p.getStatus() != PickupRequest.PickupStatus.CANCELLED)
+                    .count();
+            long cancelledPickups = allPickups.stream()
+                    .filter(p -> p.getStatus() == PickupRequest.PickupStatus.CANCELLED)
+                    .count();
+            double totalWaste = allPickups.stream()
+                    .filter(p -> p.getStatus() == PickupRequest.PickupStatus.COMPLETED)
+                    .mapToDouble(p -> p.getApproxWeight() != null ? p.getApproxWeight() : 0)
+                    .sum();
+            LocalDateTime monthStart = LocalDateTime.now().withDayOfMonth(1)
+                    .withHour(0).withMinute(0).withSecond(0);
+            long thisMonthPickups = allPickups.stream()
+                    .filter(p -> p.getStatus() == PickupRequest.PickupStatus.COMPLETED
+                            && p.getCompletedAt() != null
+                            && p.getCompletedAt().isAfter(monthStart))
+                    .count();
+            double thisMonthWaste = allPickups.stream()
+                    .filter(p -> p.getStatus() == PickupRequest.PickupStatus.COMPLETED
+                            && p.getCompletedAt() != null
+                            && p.getCompletedAt().isAfter(monthStart))
+                    .mapToDouble(p -> p.getApproxWeight() != null ? p.getApproxWeight() : 0)
+                    .sum();
+            long pointsThisMonth = allPickups.stream()
+                    .filter(p -> p.getStatus() == PickupRequest.PickupStatus.COMPLETED
+                            && p.getCompletedAt() != null
+                            && p.getCompletedAt().isAfter(monthStart))
+                    .mapToLong(p -> p.getEcoPointsAwarded() != null ? p.getEcoPointsAwarded() : 0L)
+                    .sum();
+            long totalPoints = allPickups.stream()
+                    .filter(p -> p.getStatus() == PickupRequest.PickupStatus.COMPLETED)
+                    .mapToLong(p -> p.getEcoPointsAwarded() != null ? p.getEcoPointsAwarded() : 0L)
+                    .sum();
+            double avgPointsPerPickup = totalPickups > 0 ? (double) totalPoints / totalPickups : 0;
+            double avgWeightPerPickup = totalPickups > 0 ? totalWaste / totalPickups : 0;
+            LocalDateTime lastPickupDate = allPickups.stream()
+                    .filter(p -> p.getStatus() == PickupRequest.PickupStatus.COMPLETED)
+                    .map(PickupRequest::getCompletedAt)
+                    .filter(java.util.Objects::nonNull)
+                    .max(LocalDateTime::compareTo)
+                    .orElse(null);
+
+            java.util.Map<String, Double> plasticTypeKg = new java.util.LinkedHashMap<>();
+            for (String type : new String[] {"PET", "HDPE", "PVC", "LDPE", "PP", "PS", "OTHER"}) {
+                plasticTypeKg.put(type, 0.0);
+            }
+            for (PickupRequest pickup : allPickups) {
+                if (pickup.getStatus() != PickupRequest.PickupStatus.COMPLETED) {
+                    continue;
+                }
+                if (pickup.getPlasticTypes() == null || pickup.getApproxWeight() == null) {
+                    continue;
+                }
+                String[] types = pickup.getPlasticTypes().split(",");
+                int typeCount = 0;
+                for (String t : types) {
+                    if (t != null && !t.trim().isEmpty()) {
+                        typeCount++;
+                    }
+                }
+                if (typeCount == 0) {
+                    continue;
+                }
+                double perTypeWeight = pickup.getApproxWeight() / typeCount;
+                for (String t : types) {
+                    String key = t != null ? t.trim() : "";
+                    if (plasticTypeKg.containsKey(key)) {
+                        plasticTypeKg.put(key, plasticTypeKg.get(key) + perTypeWeight);
+                    }
+                }
+            }
+
+            model.addAttribute("totalPickups", totalPickups);
+            model.addAttribute("pendingPickups", pendingPickups);
+            model.addAttribute("cancelledPickups", cancelledPickups);
+            model.addAttribute("totalWasteRecycled", totalWaste);
+            model.addAttribute("thisMonthPickups", thisMonthPickups);
+            model.addAttribute("thisMonthWaste", thisMonthWaste);
+            model.addAttribute("pointsThisMonth", pointsThisMonth);
+            model.addAttribute("pointsRedeemed", 0L);
+            model.addAttribute("avgPointsPerPickup", avgPointsPerPickup);
+            model.addAttribute("avgWeightPerPickup", avgWeightPerPickup);
+            model.addAttribute("lastPickupDate", lastPickupDate);
+            model.addAttribute("plasticTypeKg", plasticTypeKg);
             return "user/household/dashboard";
         } else if (user.getRole() == Role.ROLE_BUSINESS) {
             model.addAttribute("profile", user.getBusinessProfile());
