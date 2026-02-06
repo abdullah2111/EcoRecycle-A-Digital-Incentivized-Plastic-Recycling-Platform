@@ -290,7 +290,7 @@ public class DashboardController {
 
             if (user.getBusinessProfile() != null) {
                 var profile = user.getBusinessProfile();
-                profile.setName(businessName);
+                profile.setBusinessName(businessName);
                 profile.setBusinessType(businessType);
                 profile.setPhone(phone);
                 businessProfileRepository.save(profile);

@@ -24,9 +24,10 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background: #f8f9fa;
             min-height: 100vh;
+            margin: 0;
         }
 
         .dashboard-container {
@@ -37,33 +38,32 @@
         /* Sidebar Styles */
         .sidebar {
             width: var(--sidebar-width);
-            background: white;
+            background: #fff;
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
             position: fixed;
             height: 100vh;
-            z-index: 1000;
         }
 
         .sidebar-header {
             padding: 25px 20px;
-            background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
-            color: white;
+            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
+            color: #fff;
         }
 
         .sidebar-header h2 {
             font-size: 24px;
-            margin-bottom: 5px;
+            margin: 0 0 5px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
         .sidebar-header p {
-            font-size: 14px;
-            opacity: 0.9;
             margin: 0;
+            opacity: .9;
+            font-size: 14px;
         }
 
         .sidebar-menu {
@@ -78,8 +78,8 @@
             padding: 15px 25px;
             color: #333;
             text-decoration: none;
-            transition: all 0.3s ease;
             border-left: 3px solid transparent;
+            transition: all .3s;
         }
 
         .menu-item:hover {
@@ -105,16 +105,16 @@
             margin: 20px;
             padding: 12px 20px;
             background: #dc3545;
-            color: white;
+            color: #fff;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
+            font-size: 16px;
+            transition: all .3s ease;
         }
 
         .logout-btn:hover {
@@ -132,7 +132,7 @@
 
         .profile-header {
             background: white;
-            padding: 30px;
+            padding: 25px 30px;
             border-radius: 12px;
             margin-bottom: 30px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
@@ -151,8 +151,8 @@
         }
 
         .profile-card {
-            background: white;
-            padding: 30px;
+            background: #fff;
+            padding: 25px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             margin-bottom: 20px;
@@ -160,7 +160,7 @@
 
         .profile-card h3 {
             color: #333;
-            font-size: 20px;
+            font-size: 18px;
             margin-bottom: 20px;
             display: flex;
             align-items: center;
@@ -169,8 +169,9 @@
 
         .info-row {
             display: flex;
-            padding: 15px 0;
+            padding: 12px 0;
             border-bottom: 1px solid #f0f0f0;
+            align-items: center;
         }
 
         .info-row:last-child {
@@ -180,28 +181,31 @@
         .info-label {
             font-weight: 600;
             color: #666;
-            width: 200px;
+            width: 180px;
             display: flex;
             align-items: center;
             gap: 10px;
+            font-size: 14px;
         }
 
         .info-value {
             color: #333;
             flex: 1;
+            font-size: 14px;
         }
 
         .edit-btn {
             background: var(--primary-green);
             color: white;
             border: none;
-            padding: 8px 20px;
+            padding: 8px 16px;
             border-radius: 6px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all .3s;
             display: flex;
             align-items: center;
             gap: 8px;
+            font-size: 14px;
         }
 
         .edit-btn:hover {
@@ -252,7 +256,7 @@
             padding: 12px 20px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            animation: slideIn 0.3s ease-in-out;
+            animation: slideIn .3s;
         }
 
         .alert-error {
@@ -262,7 +266,7 @@
             padding: 12px 20px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            animation: slideIn 0.3s ease-in-out;
+            animation: slideIn .3s;
         }
 
         @keyframes slideIn {
@@ -288,7 +292,7 @@
         }
 
         .alert-fade-out {
-            animation: slideOut 0.3s ease-in-out forwards;
+            animation: slideOut .3s forwards;
         }
     </style>
 </head>
@@ -309,19 +313,15 @@
                 <i class="bi bi-speedometer2"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="#" class="menu-item">
+            <a th:href="@{'/' + ${username} + '/pickup/my-orders'}" class="menu-item">
                 <i class="bi bi-box-seam"></i>
-                <span>Request Pickup</span>
+                <span>My Pickup</span>
             </a>
-            <a href="#" class="menu-item">
+            <a th:href="@{'/' + ${username} + '/pickup/order-history'}" class="menu-item">
                 <i class="bi bi-clock-history"></i>
                 <span>Pickup History</span>
             </a>
-            <a href="#" class="menu-item">
-                <i class="bi bi-star-fill"></i>
-                <span>Eco Points</span>
-            </a>
-            <a href="#" class="menu-item">
+            <a th:href="@{'/' + ${username} + '/redeem/gifts'}" class="menu-item">
                 <i class="bi bi-gift"></i>
                 <span>Redeem Gifts</span>
             </a>

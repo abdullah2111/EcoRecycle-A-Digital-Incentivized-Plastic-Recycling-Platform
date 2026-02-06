@@ -66,10 +66,8 @@
         <nav class="sidebar-menu">
             <a th:href="@{'/' + ${username} + '/dashboard'}" class="menu-item"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
             <a th:href="@{'/' + ${username} + '/pickup/requests'}" class="menu-item"><i class="bi bi-inbox-fill"></i><span>View Requests</span></a>
-            <a th:href="@{'/' + ${username} + '/pickup/assigned'}" class="menu-item"><i class="bi bi-gear-wide-connected"></i><span>Processing Orders</span></a>
-            <a th:href="@{'/' + ${username} + '/pickup/order-history'}" class="menu-item active"><i class="bi bi-clock-history"></i><span>Order History</span></a>
-            <a href="#" class="menu-item"><i class="bi bi-graph-up"></i><span>Analytics</span></a>
-            <a href="#" class="menu-item"><i class="bi bi-star-fill"></i><span>Ratings</span></a>
+            <a th:href="@{'/' + ${username} + '/pickup/assigned'}" class="menu-item"><i class="bi bi-hourglass-split"></i><span>Processing Orders</span></a>
+            <a th:href="@{'/' + ${username} + '/pickup/order-history'}" class="menu-item active"><i class="bi bi-clock-history"></i><span>Pickup History</span></a>
             <a th:href="@{'/' + ${username} + '/profile'}" class="menu-item"><i class="bi bi-person-circle"></i><span>Profile</span></a>
         </nav>
         <form th:action="@{/logout}" method="post"><button type="submit" class="logout-btn"><i class="bi bi-box-arrow-right"></i> Logout</button></form>
