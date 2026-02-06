@@ -394,6 +394,7 @@
             box-shadow: 0 2px 8px rgba(40, 167, 69, 0.15);
         }
 
+        .quick-actions {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
@@ -551,20 +552,21 @@
                 </div>
             </div>
 
-            <!-- Request New Pickup Button -->
-            <div class="request-pickup-section">
-                <div class="pickup-button-wrapper">
-                    <button class="request-pickup-btn" data-bs-toggle="modal" data-bs-target="#pickupRequestModal">
-                        <i class="bi bi-plus-circle"></i> Request New Pickup
-                    </button>
-                </div>
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button class="action-btn primary" data-bs-toggle="modal" data-bs-target="#pickupRequestModal">
+                    <i class="bi bi-plus-circle"></i> Request New Pickup
+                </button>
+                <a class="action-btn success" th:href="@{'/' + ${username} + '/redeem/gifts'}" style="text-decoration:none;">
+                    <i class="bi bi-gift-fill"></i> Browse Rewards
+                </a>
             </div>
 
             <!-- Charts and Insights Section -->
             <div class="charts-grid">
-                <!-- Recycling Performance Card -->
+                <!-- Monthly Recycling Performance Card -->
                 <div class="chart-card">
-                    <h4><i class="bi bi-graph-up-arrow" style="color: var(--primary-green);"></i> Recycling Performance</h4>
+                    <h4><i class="bi bi-graph-up-arrow" style="color: var(--primary-green);"></i> Monthly Recycling Performance</h4>
 
                     <table class="insights-table">
                         <tr>
@@ -573,43 +575,59 @@
                         </tr>
                         <tr>
                             <td class="label">This Month Waste</td>
-                            <td class="value" th:text="${thisMonthWaste != null ? #numbers.formatDecimal(thisMonthWaste, 1, 1) : 0}">0</td>
+                            <td class="value" th:text="${thisMonthWaste != null ? #numbers.formatDecimal(thisMonthWaste, 1, 1) : 0} + ' kg'">0 kg</td>
                         </tr>
                         <tr>
                             <td class="label">Average Weight/Pickup</td>
-                            <td class="value" th:text="${avgWeightPerPickup != null ? #numbers.formatDecimal(avgWeightPerPickup, 1, 1) : 0}">0</td>
+                            <td class="value" th:text="${avgWeightPerPickup != null ? #numbers.formatDecimal(avgWeightPerPickup, 1, 1) : 0} + ' kg'">0 kg</td>
                         </tr>
                         <tr>
                             <td class="label">Performance Status</td>
                             <td style="text-align: right;">
-                                <span th:if="${totalPickups != null and totalPickups > 5}" class="performance-badge badge-excellent">Excellent</span>
-                                <span th:if="${totalPickups != null and totalPickups > 2 and totalPickups <= 5}" class="performance-badge badge-good">Good</span>
-                                <span th:if="${totalPickups == null or totalPickups <= 2}" class="performance-badge badge-fair">Getting Started</span>
+                                <span th:if="${thisMonthWaste != null and thisMonthWaste >= 10}" class="performance-badge badge-excellent">Excellent</span>
+                                <span th:if="${thisMonthWaste != null and thisMonthWaste >= 5 and thisMonthWaste < 10}" class="performance-badge badge-good">Good</span>
+                                <span th:if="${thisMonthWaste == null or thisMonthWaste < 5}" class="performance-badge badge-fair">Average</span>
                             </td>
                         </tr>
                     </table>
 
                     <div style="margin-top: 20px;">
-                        <p style="color: #666; font-size: 13px; margin-bottom: 10px;">Monthly Contribution</p>
+                        <p style="color: #666; font-size: 13px; margin-bottom: 10px;">Monthly Contribution Progress (Target: 10 kg)</p>
+                        <div class="progress-label">
+                            <span th:text="${thisMonthWaste != null ? #numbers.formatDecimal(thisMonthWaste, 1, 1) + ' kg of 10 kg' : '0.0 kg of 10 kg'}">0.0 kg of 10 kg</span>
+                            <span th:if="${thisMonthWaste != null and thisMonthWaste >= 10}" th:text="'100%'">100%</span>
+                            <span th:if="${thisMonthWaste != null and thisMonthWaste > 0 and thisMonthWaste < 10}" th:text="${#numbers.formatDecimal((thisMonthWaste / 10.0) * 100, 1, 0) + '%'}">0%</span>
+                            <span th:if="${thisMonthWaste == null or thisMonthWaste == 0}" th:text="'0%'">0%</span>
+                        </div>
                         <div class="progress" style="height: 10px;">
-                            <div th:if="${thisMonthPickups != null and thisMonthPickups > 0}"
+                            <!-- Dynamic progress bar based on thisMonthWaste -->
+                            <div th:if="${thisMonthWaste != null and thisMonthWaste >= 10}"
                                  class="progress-bar"
                                  role="progressbar"
-                                 style="width: 65%; background: linear-gradient(90deg, var(--primary-green), var(--success-green));"
-                                 aria-valuenow="65"
+                                 style="width: 100%; background: linear-gradient(90deg, var(--primary-green), var(--success-green));"
+                                 aria-valuenow="100"
                                  aria-valuemin="0"
                                  aria-valuemax="100">
                             </div>
-                            <div th:if="${thisMonthPickups == null or thisMonthPickups == 0}"
+                            <div th:if="${thisMonthWaste != null and thisMonthWaste > 0 and thisMonthWaste < 10}"
                                  class="progress-bar"
                                  role="progressbar"
-                                 style="width: 0%; background: #ddd;"
+                                 th:style="'width: ' + ${#numbers.formatDecimal((thisMonthWaste / 10.0) * 100, 1, 0)} + '%; background: linear-gradient(90deg, var(--primary-green), var(--success-green));'"
+                                 th:attr="aria-valuenow=${#numbers.formatDecimal((thisMonthWaste / 10.0) * 100, 1, 0)}"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100">
+                            </div>
+                            <div th:if="${thisMonthWaste == null or thisMonthWaste == 0}"
+                                 class="progress-bar"
+                                 role="progressbar"
+                                 style="width: 0%; background: linear-gradient(90deg, var(--primary-green), var(--success-green));"
                                  aria-valuenow="0"
                                  aria-valuemin="0"
                                  aria-valuemax="100">
                             </div>
                         </div>
-                        <p style="color: #999; font-size: 11px; margin-top: 8px;">Target: 10 pickups/month</p>
+                        <p style="color: #999; font-size: 11px; margin-top: 8px;" th:if="${thisMonthWaste != null and thisMonthWaste >= 10}"><i class="bi bi-check-circle" style="color: var(--primary-green);"></i> Target achieved! Keep up the great work!</p>
+                        <p style="color: #999; font-size: 11px; margin-top: 8px;" th:if="${thisMonthWaste == null or thisMonthWaste < 10}"><i class="bi bi-info-circle"></i> Keep recycling to reach your monthly target!</p>
                     </div>
                 </div>
 
@@ -617,45 +635,36 @@
                 <div class="chart-card">
                     <h4><i class="bi bi-pie-chart" style="color: #fd7e14;"></i> Top Plastic Types Recycled</h4>
 
-                    <div class="progress-bar-container">
-                        <div class="progress-label">
-                            <span>PET Bottles</span>
-                            <span th:text="${petPercentage != null ? petPercentage : 0}">0</span>%
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar" style="width: 35%; background: #28a745;"></div>
-                        </div>
-                    </div>
-
-                    <div class="progress-bar-container">
-                        <div class="progress-label">
-                            <span>HDPE Containers</span>
-                            <span th:text="${hdpePercentage != null ? hdpePercentage : 0}">0</span>%
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar" style="width: 25%; background: #20c997;"></div>
-                        </div>
-                    </div>
-
-                    <div class="progress-bar-container">
-                        <div class="progress-label">
-                            <span>Plastic Bags (LDPE)</span>
-                            <span th:text="${ldpePercentage != null ? ldpePercentage : 0}">0</span>%
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar" style="width: 20%; background: #17a2b8;"></div>
-                        </div>
-                    </div>
-
-                    <div class="progress-bar-container">
-                        <div class="progress-label">
-                            <span>Other Plastics</span>
-                            <span th:text="${otherPercentage != null ? otherPercentage : 0}">0</span>%
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar" style="width: 20%; background: #0d6efd;"></div>
-                        </div>
-                    </div>
+                    <table class="insights-table">
+                        <tr>
+                            <td class="label">PET Bottles</td>
+                            <td class="value" th:text="${plasticTypeKg['PET'] != null ? #numbers.formatDecimal(plasticTypeKg['PET'], 1, 1) + ' kg' : '0.0 kg'}">0.0 kg</td>
+                        </tr>
+                        <tr>
+                            <td class="label">HDPE Containers</td>
+                            <td class="value" th:text="${plasticTypeKg['HDPE'] != null ? #numbers.formatDecimal(plasticTypeKg['HDPE'], 1, 1) + ' kg' : '0.0 kg'}">0.0 kg</td>
+                        </tr>
+                        <tr>
+                            <td class="label">PVC</td>
+                            <td class="value" th:text="${plasticTypeKg['PVC'] != null ? #numbers.formatDecimal(plasticTypeKg['PVC'], 1, 1) + ' kg' : '0.0 kg'}">0.0 kg</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Plastic Bags (LDPE)</td>
+                            <td class="value" th:text="${plasticTypeKg['LDPE'] != null ? #numbers.formatDecimal(plasticTypeKg['LDPE'], 1, 1) + ' kg' : '0.0 kg'}">0.0 kg</td>
+                        </tr>
+                        <tr>
+                            <td class="label">PP (Containers, Caps)</td>
+                            <td class="value" th:text="${plasticTypeKg['PP'] != null ? #numbers.formatDecimal(plasticTypeKg['PP'], 1, 1) + ' kg' : '0.0 kg'}">0.0 kg</td>
+                        </tr>
+                        <tr>
+                            <td class="label">PS (Styrofoam)</td>
+                            <td class="value" th:text="${plasticTypeKg['PS'] != null ? #numbers.formatDecimal(plasticTypeKg['PS'], 1, 1) + ' kg' : '0.0 kg'}">0.0 kg</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Other Plastics</td>
+                            <td class="value" th:text="${plasticTypeKg['OTHER'] != null ? #numbers.formatDecimal(plasticTypeKg['OTHER'], 1, 1) + ' kg' : '0.0 kg'}">0.0 kg</td>
+                        </tr>
+                    </table>
 
                     <div style="margin-top: 20px; padding: 12px; background: #f8f9fa; border-radius: 8px;">
                         <p style="margin: 0; color: #666; font-size: 12px;">
@@ -686,17 +695,11 @@
                             <td class="value" th:text="${avgPointsPerPickup != null ? #numbers.formatDecimal(avgPointsPerPickup, 1, 0) : 0}">0</td>
                         </tr>
                     </table>
-
-                    <div style="margin-top: 20px; padding: 12px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #fd7e14;">
-                        <p style="margin: 0; color: #664d03; font-size: 12px;">
-                            <strong>🎁 Next reward:</strong> <span th:text="${nextRewardPoints != null ? nextRewardPoints : 100}">100</span> points to next gift tier
-                        </p>
-                    </div>
                 </div>
 
                 <!-- Recent Activity Card -->
                 <div class="chart-card">
-                    <h4><i class="bi bi-clock-history" style="color: #0d6efd;"></i> Recent Pickups Summary</h4>
+                    <h4><i class="bi bi-clock-history" style="color: #0d6efd;"></i> Pickups Summary</h4>
 
                     <table class="insights-table">
                         <tr>
@@ -718,9 +721,9 @@
                     </table>
 
                     <div style="margin-top: 20px;">
-                        <button class="btn btn-sm" style="background: var(--primary-green); color: white; width: 100%; border: none; border-radius: 6px; padding: 8px;">
+                        <a th:href="@{'/' + ${username} + '/pickup/order-history'}" class="btn btn-sm" style="background: var(--primary-green); color: white; width: 100%; border: none; border-radius: 6px; padding: 8px; text-decoration: none; display: inline-block; text-align: center;">
                             <i class="bi bi-arrow-right"></i> View All Pickups
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>

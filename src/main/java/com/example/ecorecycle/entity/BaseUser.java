@@ -50,9 +50,6 @@ public class BaseUser {
     @Builder.Default
     private Boolean isActive = true;
 
-    @Column(name = "eco_points", nullable = false)
-    @Builder.Default
-    private Long ecoPoints = 0L;
 
     @CreationTimestamp
     @Column(name = "date_joined", nullable = false, updatable = false)
